@@ -3,19 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>私中英語特訓班 (雲端紀錄版)</title>
+    <title>私中英語特訓班 (數據分析版)</title>
+    <script src="data.js"></script>
     <style>
+        /* --- 基礎設定 --- */
         body { font-family: 'Segoe UI', 'Microsoft JhengHei', sans-serif; background-color: #f4f7f6; margin: 0; color: #333; }
-        header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; }
+        header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; position: relative;}
         h1 { margin: 0; font-size: 28px; }
         .subtitle { opacity: 0.8; font-size: 14px; margin-top: 5px; }
         
-        /* 登入畫面 */
-        #login-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 999; display: flex; justify-content: center; align-items: center; }
+        /* Login & User Info */
+        #login-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 999; display: flex; justify-content: center; align-items: center; }
         .login-box { background: white; padding: 40px; border-radius: 15px; text-align: center; width: 300px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
         .login-input { width: 80%; padding: 10px; margin: 20px 0; font-size: 18px; border: 2px solid #ddd; border-radius: 5px; }
         .login-btn { padding: 10px 20px; background: #667eea; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; width: 100%; }
-        
+        #user-display { position: absolute; top: 15px; right: 20px; color: white; font-weight: bold; font-size: 14px; text-shadow: 0 2px 4px rgba(0,0,0,0.3);}
+
+        /* Navigation */
         nav { display: flex; justify-content: center; background: #fff; padding: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); position: sticky; top: 0; z-index: 100; flex-wrap: wrap; gap: 10px; }
         .nav-group { display: flex; gap: 5px; flex-wrap: wrap; justify-content: center;}
         nav button { background: #f8f9fa; border: 1px solid #e9ecef; color: #555; font-size: 14px; padding: 8px 16px; border-radius: 20px; cursor: pointer; transition: all 0.2s; font-weight: bold; }
@@ -31,38 +35,52 @@
         .section.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* Setup Box */
+        /* Components */
         .setup-box { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        .setup-title { font-size: 18px; font-weight: bold; margin-bottom: 15px; border-left: 4px solid #667eea; padding-left: 10px; color: #444; }
         .cat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; margin-bottom: 20px; }
         .cat-label { display: block; background: #f8f9fa; padding: 10px; border-radius: 8px; cursor: pointer; border: 1px solid #eee; font-size: 14px; }
         .cat-label.checked { background: #e0e7ff; border-color: #667eea; color: #4338ca; font-weight: bold; }
         
-        .vocab-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 15px; }
-        .vocab-item { background: white; padding: 15px; border-radius: 8px; border-left: 5px solid #667eea; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        .v-word { font-size: 18px; font-weight: bold; color: #2c3e50; }
-        .v-mean { color: #e67e22; font-weight: bold; margin: 5px 0; }
-        
         .quiz-box { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); text-align: center; max-width: 600px; margin: 0 auto; }
-        .q-opt { padding: 15px; border: 2px solid #e0e7ff; border-radius: 8px; background: white; cursor: pointer; margin-bottom: 10px; text-align: left;}
+        .q-score { font-size: 14px; color: #888; margin-bottom: 10px; font-weight: bold;}
+        .q-opt { padding: 15px; border: 2px solid #e0e7ff; border-radius: 8px; background: white; cursor: pointer; margin-bottom: 10px; text-align: left; transition:0.2s;}
+        .q-opt:hover { background: #f8f9ff; }
         .q-opt.correct { background: #d1fae5; border-color: #10b981; }
         .q-opt.wrong { background: #fee2e2; border-color: #ef4444; }
-        .next-btn { margin-top:20px; padding:12px 30px; background:#667eea; color:white; border:none; border-radius:25px; cursor:pointer; }
+        .next-btn { margin-top:20px; padding:12px 30px; background:#667eea; color:white; border:none; border-radius:25px; cursor:pointer; font-size: 16px; font-weight:bold;}
+        .start-btn { width: 100%; padding: 15px; font-size: 18px; background: #20c997; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
         
-        .start-btn { width: 100%; padding: 15px; background: #20c997; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 18px;}
-        .grammar-item { background: white; padding: 20px; border-radius: 8px; border-left: 5px solid #e67e22; box-shadow: 0 2px 5px rgba(0,0,0,0.05); margin-bottom: 15px;}
+        /* 單字庫 */
+        .vocab-cats { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; justify-content: center; }
+        .v-cat-btn { background: white; border: 1px solid #ddd; padding: 8px 16px; border-radius: 20px; cursor: pointer; transition: 0.2s; }
+        .v-cat-btn.active { background: #667eea; color: white; border-color: #667eea; }
+        .vocab-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 15px; }
+        .vocab-item { background: white; padding: 15px; border-radius: 8px; border-left: 5px solid #667eea; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .phrase-item { border-left-color: #e91e63; }
+        .v-word { font-size: 18px; font-weight: bold; color: #2c3e50; }
+        .v-mean { color: #e67e22; font-weight: bold; margin: 5px 0; }
+
+        /* 單字卡 */
+        .flashcard-area { display: flex; flex-direction: column; align-items: center; margin-top: 30px; perspective: 1000px; }
+        .flashcard { width: 320px; height: 220px; background: white; border-radius: 15px; box-shadow: 0 10px 20px rgba(0,0,0,0.1); cursor: pointer; position: relative; transform-style: preserve-3d; transition: transform 0.6s; }
+        .flashcard.flipped { transform: rotateY(180deg); }
+        .fc-face { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; display: flex; flex-direction: column; justify-content: center; align-items: center; border-radius: 15px; padding: 20px; box-sizing: border-box; text-align: center; }
+        .fc-front { background: white; color: #333; }
+        .fc-back { background: #667eea; color: white; transform: rotateY(180deg); }
+        
+        /* 文法 */
+        .grammar-list { display: grid; gap: 15px; }
+        .grammar-item { background: white; padding: 20px; border-radius: 8px; border-left: 5px solid #e67e22; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         .g-title { font-size: 18px; font-weight: bold; color: #d35400; }
-        
-        /* 狀態顯示 */
-        #user-display { position: absolute; top: 10px; right: 20px; color: white; font-weight: bold; font-size: 14px;}
-        .saving-status { font-size: 12px; color: #888; margin-top: 10px; font-style: italic;}
     </style>
 </head>
 <body>
 
 <div id="login-screen">
     <div class="login-box">
-        <h2>👋 歡迎來到特訓班</h2>
-        <p>請輸入你的名字以開始紀錄</p>
+        <h2>👋 特訓班登入</h2>
+        <p>輸入名字開始紀錄數據</p>
         <input type="text" id="username-input" class="login-input" placeholder="例如：弟弟">
         <button class="login-btn" onclick="loginUser()">開始學習</button>
     </div>
@@ -71,12 +89,12 @@
 <header>
     <div id="user-display"></div>
     <h1>🚀 私中英語特訓班</h1>
-    <div class="subtitle">GitHub 雲端紀錄版</div>
+    <div class="subtitle">全方位數據分析版</div>
 </header>
 
 <nav>
     <div class="nav-group">
-        <button onclick="showTab('vocab')" class="active" id="btn-vocab">📚 單字片語</button>
+        <button onclick="showTab('vocab')" class="active" id="btn-vocab">📚 單字庫</button>
         <button onclick="showTab('flashcard')" id="btn-flashcard">📇 翻卡</button>
         <button onclick="showTab('grammar')" id="btn-grammar">💡 文法</button>
     </div>
@@ -89,28 +107,43 @@
 </nav>
 
 <div class="container" id="main-content">
-    <div id="vocab" class="section active">
-        <div id="vocab-cat-btns" style="display:flex; flex-wrap:wrap; gap:5px; margin-bottom:20px; justify-content:center;"></div>
-        <div class="vocab-grid" id="vocab-container"></div>
-    </div>
     
+    <div id="vocab" class="section active">
+        <div class="vocab-cats" id="vocab-cat-btns"></div>
+        <div class="vocab-grid" id="vocab-container">
+            <div style="grid-column: 1/-1; text-align: center; color: #888; padding: 20px;">
+                👆 請點擊上方按鈕選擇一個主題
+            </div>
+        </div>
+    </div>
+
     <div id="flashcard" class="section">
         <div id="fc-setup" class="setup-box">
-            <h3>勾選練習主題</h3>
+            <div class="setup-title">翻卡練習設定</div>
             <div class="cat-grid" id="fc-cat-list"></div>
-            <button class="start-btn" onclick="initFlashcardSession()">開始</button>
+            <button class="start-btn" onclick="initFlashcardSession()">開始練習</button>
         </div>
-        <div id="fc-game" style="display:none; text-align:center;">
-            <button onclick="resetSection('flashcard')">← 重選</button>
-            <div style="margin-top:20px; background:white; padding:40px; border-radius:10px; cursor:pointer; min-height:150px;" onclick="document.getElementById('fc-back').style.display='block'">
-                <h2 id="fc-word">Word</h2>
-                <div id="fc-back" style="display:none; color:#e67e22; margin-top:20px;">
-                    <h3 id="fc-mean">Meaning</h3>
-                    <p id="fc-ex">Ex</p>
+        <div id="fc-game" style="display:none;">
+            <button onclick="endSession('翻卡練習', 0, 0, 'flashcard')" style="float:right; padding:5px 10px; background:#e74c3c; color:white; border:none; border-radius:5px; cursor:pointer;">⏹ 結束並上傳紀錄</button>
+            <button onclick="resetSection('flashcard')" style="margin-bottom:10px;">← 重選主題</button>
+            
+            <div class="flashcard-area">
+                <div class="flashcard" id="card" onclick="flipCard()">
+                    <div class="fc-face fc-front">
+                        <h2 id="fc-word">Word</h2>
+                        <span id="fc-part" style="margin-top:10px; background:#eee; padding:2px 8px; border-radius:10px; font-size:14px;">part</span>
+                        <p style="margin-top:20px; color:#999; font-size:14px;">(點擊翻面)</p>
+                    </div>
+                    <div class="fc-face fc-back">
+                        <h3 id="fc-mean">Meaning</h3>
+                        <p id="fc-ex" style="font-style:italic; font-size:16px;">Ex</p>
+                    </div>
                 </div>
-            </div>
-            <div style="margin-top:20px;">
-                <button onclick="nextCard()">下一張</button>
+                <div class="fc-controls">
+                    <button class="btn-circle" onclick="prevCard()">‹</button>
+                    <span id="fc-count" style="font-weight:bold;">1 / 50</span>
+                    <button class="btn-circle" onclick="nextCard()">›</button>
+                </div>
             </div>
         </div>
     </div>
@@ -121,15 +154,15 @@
 
     <div id="quiz-memory" class="section">
         <div id="m-setup" class="setup-box">
-            <h3>勾選測驗主題</h3>
+            <div class="setup-title">單字測驗設定</div>
             <div class="cat-grid" id="m-cat-list"></div>
             <button class="start-btn" onclick="initMemorySession()">開始測驗</button>
         </div>
         <div id="m-game" class="quiz-box" style="display:none;">
-            <button onclick="endQuiz('單字測驗', mScore, mTotal, 'quiz-memory')" style="float:right;">結束並上傳</button>
-            <div>得分：<span id="m-score">0</span></div>
-            <h2 id="m-question">Q</h2>
-            <div id="m-options" style="margin-top:20px;"></div>
+            <button onclick="endSession('單字測驗', mScore, mTotal, 'quiz-memory')" style="float:right; font-size:12px;">結束並上傳</button>
+            <div class="q-score">累積答對：<span id="m-score">0</span></div>
+            <div class="q-text" id="m-question">題目</div>
+            <div class="q-options" id="m-options"></div>
             <div id="m-feedback"></div>
             <button id="m-next-btn" class="next-btn" style="display:none" onclick="nextMemoryQ()">下一題</button>
         </div>
@@ -137,16 +170,16 @@
 
     <div id="quiz-cloze" class="section">
         <div id="c-setup" class="setup-box">
-            <h3>勾選測驗主題</h3>
+            <div class="setup-title">填空測驗設定</div>
             <div class="cat-grid" id="c-cat-list"></div>
             <button class="start-btn" onclick="initClozeSession()">開始測驗</button>
         </div>
         <div id="c-game" class="quiz-box" style="display:none;">
-            <button onclick="endQuiz('填空測驗', cScore, cTotal, 'quiz-cloze')" style="float:right;">結束並上傳</button>
-            <div>得分：<span id="c-score">0</span></div>
-            <div style="background:#f0f4f8; padding:15px; margin:15px 0; text-align:left; border-left:5px solid #20c997;" id="c-sentence">...</div>
-            <div style="color:#888;" id="c-hint"></div>
-            <div id="c-options" style="margin-top:20px;"></div>
+            <button onclick="endSession('填空測驗', cScore, cTotal, 'quiz-cloze')" style="float:right; font-size:12px;">結束並上傳</button>
+            <div class="q-score">累積答對：<span id="c-score">0</span></div>
+            <div style="background:#f0f4f8; padding:15px; margin:15px 0; text-align:left; border-left:5px solid #20c997; font-size:20px;" id="c-sentence">...</div>
+            <div style="color:#888; margin-bottom:20px;" id="c-hint"></div>
+            <div class="q-options" id="c-options"></div>
             <div id="c-feedback"></div>
             <button id="c-next-btn" class="next-btn" style="display:none" onclick="nextClozeQ()">下一題</button>
         </div>
@@ -158,73 +191,73 @@
             <p style="color:#666; margin-bottom:20px;">題庫收錄約 100 題重點文法，每次測驗將隨機出題。</p>
             <button class="start-btn" onclick="initGrammarSession()">開始文法測驗</button>
         </div>
-
         <div id="g-game" class="quiz-box" style="display:none;">
-            <button onclick="endQuiz('文法測驗', gScore, gTotal, 'quiz-grammar')" style="float:right; font-size:12px; cursor:pointer;">結束並上傳</button>
+            <button onclick="endSession('文法測驗', gScore, gTotal, 'quiz-grammar')" style="float:right; font-size:12px;">結束並上傳</button>
             <div class="q-score">得分：<span id="g-score">0</span> / <span id="g-total">0</span></div>
-            
             <h2 id="g-question" class="q-text">Q</h2>
-            
-            <div id="g-options" style="margin-top:20px;"></div>
-            <div id="g-feedback" class="q-feedback"></div>
+            <div class="q-options" id="g-options"></div>
+            <div id="g-feedback"></div>
             <button id="g-next-btn" class="next-btn" style="display:none" onclick="nextGrammarQ()">下一題</button>
         </div>
     </div>
 
     <div id="quiz-mixed" class="section">
         <div class="quiz-box">
-            <div id="x-info"></div>
+            <div class="q-score" id="x-score">進度：1 / 20 | 得分：0</div>
+            <div id="x-tag-container"></div>
             <div id="x-content">
-                <span id="x-tag" style="background:#667eea; color:white; padding:3px 8px; border-radius:10px; font-size:12px;">Tag</span>
-                <h2 id="x-question">Q</h2>
-                <div id="x-extra" style="color:#666; margin-bottom:10px;"></div>
-                <div id="x-options"></div>
+                <div class="q-text" id="x-question">題目載入中...</div>
+                <div id="x-extra-info" style="color:#666; margin-bottom:10px;"></div>
+                <div class="q-options" id="x-options"></div>
             </div>
             <div id="x-feedback"></div>
-            <button id="x-next-btn" class="next-btn" style="display:none" onclick="nextMixedQ()">下一題</button>
+            <button id="x-next-btn" class="next-btn" style="display:none" onclick="nextMixedQuestion()">下一題</button>
             <button id="x-restart-btn" class="next-btn" style="display:none; background:#20c997;" onclick="initMixedQuiz()">再考一次</button>
-            <div id="save-status" class="saving-status"></div>
         </div>
     </div>
+
 </div>
 
 <script>
     // ==========================================
-    // ⚠️ 設定區：請將下方的 URL 換成你的 Google Apps Script 網址
+    // ⚠️ 請將下方網址換成你的 Apps Script 網址
     // ==========================================
-    const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwc96555C6SWdZlcfbLvWt9_ZaxYklV37sTOLoq32QoqatiI7icbi422mp45TF31UEa/exec'; 
-    // 例如: https://script.google.com/macros/s/AKfycbx.../exec
+    const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/library/d/19R1MeJckkp34xlESjuewxLqdswCjvGnyeI_FmYoBzxTGUCGIVU0apgH_/3'; 
 
+    // 全域變數
     let currentUser = "";
     let data = {};
     let allCategories = [];
     
+    // 數據紀錄變數 (Data Tracking)
+    let sessionStartTime = 0;
+    let sessionThemes = []; 
+    let sessionMistakes = []; // 儲存錯誤題目的詳細資訊
+
     // 測驗狀態
     let activeList = [];
     let fcIdx=0;
     let mScore=0, mTotal=0, mAns=-1;
     let cScore=0, cTotal=0, cAns=-1;
-    let gList=[], gIdx=0, gScore=0;
-    let xList=[], xIdx=0, xScore=0, xAns=-1;
+    let gList=[], gIdx=0, gScore=0, gTotal=0;
+    let xQuestions=[], xIndex=0, xScore=0, xAns=-1;
 
     // 初始化
+    window.onload = function() {
+        if(typeof learningData !== 'undefined') {
+            data = learningData;
+            initApp();
+        } else {
+            alert("找不到 data.js，請確認檔案存在！");
+        }
+    };
+
     function loginUser() {
         const name = document.getElementById('username-input').value.trim();
         if(!name) return alert("請輸入名字！");
         currentUser = name;
         document.getElementById('login-screen').style.display = 'none';
         document.getElementById('user-display').innerText = `學員：${currentUser}`;
-        loadData();
-    }
-
-    async function loadData() {
-        try {
-            const res = await fetch('data.json'); // 讀取 GitHub 上的 data.json
-            data = await res.json();
-            initApp();
-        } catch(e) {
-            alert("讀取資料失敗，請確認 data.json 存在");
-        }
     }
 
     function initApp() {
@@ -236,21 +269,65 @@
         renderMultiSelect('fc-cat-list');
         renderMultiSelect('m-cat-list');
         renderMultiSelect('c-cat-list');
-        
-        // 預備文法題
-        if(data.grammarQuiz) gList = data.grammarQuiz.sort(()=>Math.random()-0.5);
     }
 
-    // --- 共用功能 ---
+    // --- 資料傳輸核心邏輯 ---
+    function startTracking(themesArray) {
+        sessionStartTime = Date.now();
+        sessionThemes = themesArray || ["綜合/隨機"];
+        sessionMistakes = []; // 重置錯誤列表
+    }
+
+    function recordMistake(question, correctAnswer, userAnswer) {
+        // 將錯誤資訊存入陣列
+        sessionMistakes.push(`[題目]: ${question} | [正解]: ${correctAnswer}`);
+    }
+
+    function endSession(type, score, total, resetId) {
+        const duration = Math.round((Date.now() - sessionStartTime) / 1000); // 秒數
+        const themesStr = sessionThemes.join(", ");
+        
+        // 如果是翻卡練習，沒有分數，Total 設為 0 即可
+        
+        if(GOOGLE_SCRIPT_URL.includes("script.google.com")) {
+            const payload = {
+                name: currentUser,
+                type: type,
+                score: score,
+                total: total,
+                duration: duration,
+                themes: themesStr,
+                mistakes: sessionMistakes
+            };
+            
+            fetch(GOOGLE_SCRIPT_URL, {
+                method: 'POST', mode: 'no-cors', 
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(payload)
+            }).catch(e => console.log(e));
+        }
+
+        alert(`紀錄已上傳！\n耗時：${duration}秒\n錯誤數：${sessionMistakes.length}`);
+        resetSection(resetId);
+    }
+
+    // --- 介面切換 ---
     function showTab(id) {
         document.querySelectorAll('.section').forEach(d => d.classList.remove('active'));
         document.getElementById(id).classList.add('active');
         document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
         document.getElementById('btn-'+id).classList.add('active');
-        if(id==='quiz-grammar') startGrammarQuiz();
         if(id==='quiz-mixed') initMixedQuiz();
     }
-    
+
+    function resetSection(id) {
+        if(id==='flashcard') { document.getElementById('fc-setup').style.display='block'; document.getElementById('fc-game').style.display='none'; }
+        if(id==='quiz-memory') { document.getElementById('m-setup').style.display='block'; document.getElementById('m-game').style.display='none'; }
+        if(id==='quiz-cloze') { document.getElementById('c-setup').style.display='block'; document.getElementById('c-game').style.display='none'; }
+        if(id==='quiz-grammar') { document.getElementById('g-setup').style.display='block'; document.getElementById('g-game').style.display='none'; }
+    }
+
+    // --- 多選單 helper ---
     function renderMultiSelect(id) {
         const div = document.getElementById(id);
         div.innerHTML = `<label class="cat-label"><input type="checkbox" value="PHRASES"> 片語</label>`;
@@ -263,8 +340,12 @@
             }
         });
     }
-
+    function getSelectedThemes(id) {
+        // 回傳勾選的主題名稱陣列 (用於紀錄)
+        return Array.from(document.querySelectorAll(`#${id} input:checked`)).map(cb => cb.value);
+    }
     function getSelectedItems(id) {
+        // 回傳實際資料物件陣列
         const inputs = document.querySelectorAll(`#${id} input:checked`);
         let items = [];
         inputs.forEach(input => {
@@ -274,146 +355,75 @@
         return items;
     }
 
-    function resetSection(id) {
-        if(id==='flashcard') { document.getElementById('fc-setup').style.display='block'; document.getElementById('fc-game').style.display='none'; }
-        if(id==='quiz-memory') { document.getElementById('m-setup').style.display='block'; document.getElementById('m-game').style.display='none'; }
-        if(id==='quiz-cloze') { document.getElementById('c-setup').style.display='block'; document.getElementById('c-game').style.display='none'; }
-        if(id==='quiz-grammar') { document.getElementById('g-setup').style.display='block'; document.getElementById('g-game').style.display='none'; }
-    }
-
-    // --- 資料上傳 Google Sheets ---
-    function sendScore(type, score, total) {
-        if(!GOOGLE_SCRIPT_URL.includes("script.google.com")) {
-            console.warn("未設定 Google Script URL，無法上傳分數");
-            return;
-        }
-        
-        const payload = {
-            name: currentUser,
-            type: type,
-            score: score,
-            total: total
-        };
-
-        // 使用 no-cors 模式發送 (無法讀取回傳值，但能成功發送)
-        fetch(GOOGLE_SCRIPT_URL, {
-            method: 'POST',
-            mode: 'no-cors', 
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        }).then(() => {
-            console.log("Data sent to Google Sheets");
-        }).catch(err => console.error("Upload failed", err));
-    }
-
-    // --- 測驗結束處理 ---
-    function endQuiz(type, score, total, resetId) {
-        if(total === 0) return;
-        if(confirm(`結束測驗？\n得分：${score} / ${total}\n確定要上傳成績嗎？`)) {
-            sendScore(type, score, total);
-            alert("成績已送出！");
-            resetSection(resetId);
-        }
-    }
-
     // --- 單字庫 ---
-    // --- 單字庫 (修正版：加入片語按鈕) ---
     function initVocabView() {
         const div = document.getElementById('vocab-cat-btns');
-        div.innerHTML = ''; // 清空按鈕區
+        div.innerHTML = '';
+        
+        const pBtn = document.createElement('button');
+        pBtn.className = 'v-cat-btn';
+        pBtn.innerText = "🗣️ 片語 (Phrases)";
+        pBtn.onclick = () => renderVocabList('PHRASES', pBtn);
+        div.appendChild(pBtn);
 
-        // 1. 先加入「片語」按鈕
-        const phraseBtn = document.createElement('button');
-        phraseBtn.className = 'v-cat-btn';
-        phraseBtn.innerText = "🗣️ 片語 (Phrases)";
-        phraseBtn.onclick = () => renderVocabList('PHRASES', phraseBtn);
-        div.appendChild(phraseBtn);
-
-        // 2. 再加入其他單字分類按鈕
-        allCategories.forEach((c) => {
+        allCategories.forEach(c => {
             const btn = document.createElement('button');
             btn.className = 'v-cat-btn';
             btn.innerText = c;
             btn.onclick = () => renderVocabList(c, btn);
             div.appendChild(btn);
         });
-
-        // 預設顯示第一個分類 (通常是片語或第一個單字主題)
-        if (data.phrases && data.phrases.length > 0) {
-            renderVocabList('PHRASES', phraseBtn);
-        } else if (allCategories.length > 0) {
-            renderVocabList(allCategories[0], div.children[1]);
-        }
+        
+        if(data.phrases && data.phrases.length>0) renderVocabList('PHRASES', pBtn);
+        else if(allCategories.length>0) renderVocabList(allCategories[0], div.children[1]);
     }
-
-    function renderVocabList(cat, btnElement) {
-        // 更新按鈕樣式 (Highlight 目前選中的按鈕)
-        document.querySelectorAll('.v-cat-btn').forEach(b => b.classList.remove('active'));
-        if(btnElement) btnElement.classList.add('active');
-
+    function renderVocabList(cat, btn) {
+        document.querySelectorAll('.v-cat-btn').forEach(b=>b.classList.remove('active'));
+        if(btn) btn.classList.add('active');
         const div = document.getElementById('vocab-container');
         div.innerHTML = '';
-
-        // 判斷是「片語」還是「一般單字」
-        let items = [];
-        if (cat === 'PHRASES') {
-            items = data.phrases || [];
-        } else {
-            items = data.vocabulary.filter(v => (v.category || '其他') === cat);
-        }
-
-        // 渲染列表
-        if (items.length === 0) {
-            div.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:20px;color:#888;">暫無資料</div>';
-            return;
-        }
-
+        let items = (cat==='PHRASES') ? (data.phrases||[]) : data.vocabulary.filter(v=>(v.category||'其他')===cat);
+        if(items.length===0) { div.innerHTML='<div style="text-align:center;grid-column:1/-1">無資料</div>'; return; }
         items.forEach(v => {
-            // 片語可能沒有 part (詞性)，預設顯示 phr.
             const word = v.word || v.phrase;
             const part = v.part || 'phr.';
-            // 判斷是否為片語樣式 (加上粉紅色邊框)
-            const extraClass = (cat === 'PHRASES') ? 'phrase-item' : '';
-            
-            div.innerHTML += `
-                <div class="vocab-item ${extraClass}">
-                    <div class="v-word">${word} <span class="v-part">${part}</span></div>
-                    <div class="v-mean">${v.meaning}</div>
-                    <div class="v-ex">${v.example}</div>
-                </div>`;
+            const cls = (cat==='PHRASES') ? 'phrase-item' : '';
+            div.innerHTML += `<div class="vocab-item ${cls}"><div class="v-word">${word} <span class="v-part">${part}</span></div><div class="v-mean">${v.meaning}</div><div class="v-ex">${v.example}</div></div>`;
         });
     }
 
     // --- 翻卡 ---
     function initFlashcardSession() {
-        activeList = getSelectedItems('fc-cat-list').sort(()=>Math.random()-0.5);
-        if(activeList.length===0) return alert("請勾選主題");
-        fcIdx=0;
+        const themes = getSelectedThemes('fc-cat-list');
+        activeList = getSelectedItems('fc-cat-list');
+        if(activeList.length===0) return alert('請勾選主題');
+        
+        startTracking(themes); // 開始紀錄時間與主題
+        fcIdx=0; activeList.sort(()=>Math.random()-0.5);
         document.getElementById('fc-setup').style.display='none';
         document.getElementById('fc-game').style.display='block';
-        showCard();
+        renderFlashcard();
     }
-    function showCard() {
+    function renderFlashcard() {
         const item = activeList[fcIdx];
         document.getElementById('fc-word').innerText = item.word || item.phrase;
+        document.getElementById('fc-part').innerText = item.part || 'phr.';
         document.getElementById('fc-mean').innerText = item.meaning;
         document.getElementById('fc-ex').innerText = item.example;
-        document.getElementById('fc-back').style.display='none';
+        document.getElementById('fc-count').innerText = `${fcIdx+1} / ${activeList.length}`;
+        document.getElementById('card').classList.remove('flipped');
     }
-    function nextCard() { fcIdx = (fcIdx+1)%activeList.length; showCard(); }
-
-    // --- 文法列表 ---
-    function initGrammarView() {
-        const div = document.getElementById('grammar-container');
-        if(data.grammarRules) data.grammarRules.forEach(g => {
-            div.innerHTML += `<div class="grammar-item"><div class="g-title">${g.title}</div><div>${g.content}</div></div>`;
-        });
-    }
+    function flipCard() { document.getElementById('card').classList.toggle('flipped'); }
+    function nextCard() { fcIdx=(fcIdx+1)%activeList.length; renderFlashcard(); }
+    function prevCard() { fcIdx=(fcIdx-1+activeList.length)%activeList.length; renderFlashcard(); }
 
     // --- 單字測驗 ---
     function initMemorySession() {
+        const themes = getSelectedThemes('m-cat-list');
         activeList = getSelectedItems('m-cat-list');
-        if(activeList.length===0) return alert("請勾選");
+        if(activeList.length===0) return alert('請勾選主題');
+        
+        startTracking(themes);
         mScore=0; mTotal=0;
         document.getElementById('m-setup').style.display='none';
         document.getElementById('m-game').style.display='block';
@@ -426,7 +436,11 @@
         
         const item = activeList[Math.floor(Math.random()*activeList.length)];
         const correct = item.word || item.phrase;
-        document.getElementById('m-question').innerHTML = `<span style="font-size:16px;color:#888;">請問</span><br>${item.meaning}`;
+        
+        // 將當前題目存入全域，以便 checkM 使用
+        window.currentMItem = item; 
+
+        document.getElementById('m-question').innerHTML = `<span style="font-size:16px;color:#888">請問</span><br>${item.meaning}<br><span style="font-size:16px;color:#888">是哪個字？</span>`;
         
         let opts = [correct];
         const pool = [...data.vocabulary, ...(data.phrases||[])];
@@ -439,24 +453,36 @@
         mAns = opts.indexOf(correct);
         
         const div = document.getElementById('m-options');
-        div.innerHTML = '';
+        div.innerHTML='';
         opts.forEach((o, i) => {
-            div.innerHTML += `<div class="q-opt" onclick="checkM(this, ${i})">${o}</div>`;
+            div.innerHTML += `<div class="q-opt" onclick="checkM(this, ${i}, '${o}')">${o}</div>`;
         });
         mTotal++;
     }
-    function checkM(btn, i) {
+    function checkM(btn, i, selectedWord) {
         document.querySelectorAll('#m-options .q-opt').forEach(b=>b.style.pointerEvents='none');
-        if(i===mAns) { btn.classList.add('correct'); mScore++; document.getElementById('m-feedback').innerHTML='✅ 正確'; }
-        else { btn.classList.add('wrong'); document.querySelectorAll('#m-options .q-opt')[mAns].classList.add('correct'); document.getElementById('m-feedback').innerHTML='❌ 錯誤'; }
+        if(i===mAns) { 
+            btn.classList.add('correct'); mScore++; 
+            document.getElementById('m-feedback').innerHTML='<span style="color:#10b981; font-weight:bold;">✅ 正確</span>'; 
+        }
+        else { 
+            btn.classList.add('wrong'); 
+            document.querySelectorAll('#m-options .q-opt')[mAns].classList.add('correct'); 
+            document.getElementById('m-feedback').innerHTML='<span style="color:#ef4444; font-weight:bold;">❌ 錯誤</span>';
+            // 紀錄錯誤：題目(中文) | 正解(英文)
+            recordMistake(window.currentMItem.meaning, (window.currentMItem.word||window.currentMItem.phrase));
+        }
         document.getElementById('m-score').innerText = mScore;
         document.getElementById('m-next-btn').style.display='inline-block';
     }
 
     // --- 填空測驗 ---
     function initClozeSession() {
+        const themes = getSelectedThemes('c-cat-list');
         activeList = getSelectedItems('c-cat-list');
-        if(activeList.length===0) return alert("請勾選");
+        if(activeList.length===0) return alert('請勾選主題');
+        
+        startTracking(themes);
         cScore=0; cTotal=0;
         document.getElementById('c-setup').style.display='none';
         document.getElementById('c-game').style.display='block';
@@ -467,14 +493,16 @@
         document.getElementById('c-feedback').innerHTML='';
         document.getElementById('c-next-btn').style.display='none';
         
-        let item, sent, word, attempts=0;
+        let item, word, sent, attempts=0;
         while(true) {
             item = activeList[Math.floor(Math.random()*activeList.length)];
             word = item.word || item.phrase;
             sent = item.example;
             if(sent.toLowerCase().includes(word.toLowerCase())) break;
-            if(attempts++>20) break;
+            if(attempts++ > 20) break;
         }
+        window.currentCItem = item; // 存起來以便紀錄錯誤
+
         const regex = new RegExp(word, "gi");
         document.getElementById('c-sentence').innerText = sent.replace(regex, "______");
         document.getElementById('c-hint').innerText = `提示：${item.meaning}`;
@@ -490,7 +518,7 @@
         cAns = opts.indexOf(word);
         
         const div = document.getElementById('c-options');
-        div.innerHTML = '';
+        div.innerHTML='';
         opts.forEach((o, i) => {
             div.innerHTML += `<div class="q-opt" onclick="checkC(this, ${i}, '${sent.replace(/'/g, "\\'")}')">${o}</div>`;
         });
@@ -498,151 +526,134 @@
     }
     function checkC(btn, i, full) {
         document.querySelectorAll('#c-options .q-opt').forEach(b=>b.style.pointerEvents='none');
-        if(i===cAns) { btn.classList.add('correct'); cScore++; document.getElementById('c-feedback').innerHTML=`✅ 正確<br>${full}`; }
-        else { btn.classList.add('wrong'); document.querySelectorAll('#c-options .q-opt')[cAns].classList.add('correct'); document.getElementById('c-feedback').innerHTML=`❌ 錯誤<br>${full}`; }
+        if(i===cAns) { 
+            btn.classList.add('correct'); cScore++; 
+            document.getElementById('c-feedback').innerHTML=`<span style="color:#10b981; font-weight:bold;">✅ 正確</span><br>${full}`; 
+        }
+        else { 
+            btn.classList.add('wrong'); 
+            document.querySelectorAll('#c-options .q-opt')[cAns].classList.add('correct'); 
+            document.getElementById('c-feedback').innerHTML=`<span style="color:#ef4444; font-weight:bold;">❌ 錯誤</span><br>${full}`; 
+            // 紀錄錯誤
+            recordMistake(document.getElementById('c-sentence').innerText, (window.currentCItem.word||window.currentCItem.phrase));
+        }
         document.getElementById('c-score').innerText = cScore;
         document.getElementById('c-next-btn').style.display='inline-block';
     }
 
     // --- 文法測驗 ---
-    // --- 文法測驗 (更新版：Session 模式) ---
-    function initGrammarSession() {
-        // 1. 檢查是否有題目
-        if (!data.grammarQuiz || data.grammarQuiz.length === 0) {
-            alert("資料庫中沒有文法題目！");
-            return;
-        }
-
-        // 2. 初始化變數
-        gScore = 0;
-        gTotal = 0;
-        gIdx = 0;
-        
-        // 3. 隨機打亂題目順序
-        // 複製一份新的陣列來打亂，以免影響原始資料
-        gList = [...data.grammarQuiz].sort(() => Math.random() - 0.5);
-
-        // 4. 切換介面
-        document.getElementById('g-setup').style.display = 'none';
-        document.getElementById('g-game').style.display = 'block';
-        
-        // 5. 開始第一題
-        nextGrammarQ();
+    function initGrammarView() {
+        const div = document.getElementById('grammar-container');
+        if(data.grammarRules) data.grammarRules.forEach(g => div.innerHTML += `<div class="grammar-item"><div class="g-title">${g.title}</div><div>${g.content}</div></div>`);
     }
 
+    function initGrammarSession() {
+        if(!data.grammarQuiz || data.grammarQuiz.length===0) return alert("無題目");
+        
+        startTracking(["隨機文法"]); // 文法通常不分主題，或是已混和
+        gScore=0; gTotal=0; gIdx=0;
+        gList = [...data.grammarQuiz].sort(()=>Math.random()-0.5);
+        document.getElementById('g-setup').style.display='none';
+        document.getElementById('g-game').style.display='block';
+        nextGrammarQ();
+    }
     function nextGrammarQ() {
-        // 檢查是否做完所有題目
-        if (gIdx >= gList.length) {
-            alert("太厲害了！你已經做完所有 100 題文法了！\n將重新洗牌開始。");
-            gList.sort(() => Math.random() - 0.5);
-            gIdx = 0;
+        if(gIdx >= gList.length) { 
+            // 自動結束並上傳
+            endSession('文法測驗', gScore, gTotal, 'quiz-grammar');
+            return;
         }
-
-        // 更新分數顯示
         document.getElementById('g-score').innerText = gScore;
         document.getElementById('g-total').innerText = gTotal;
+        document.getElementById('g-feedback').innerHTML='';
+        document.getElementById('g-next-btn').style.display='none';
         
-        // 重置介面
-        document.getElementById('g-feedback').innerHTML = '';
-        document.getElementById('g-next-btn').style.display = 'none';
-
-        // 載入題目
         const q = gList[gIdx];
-        document.getElementById('g-question').innerText = q.q;
+        window.currentGItem = q; // 暫存
 
-        // 生成選項
+        document.getElementById('g-question').innerText = q.q;
         const div = document.getElementById('g-options');
-        div.innerHTML = '';
+        div.innerHTML='';
         q.options.forEach((o, i) => {
             div.innerHTML += `<div class="q-opt" onclick="checkG(this, ${i}, ${q.ans}, '${q.note.replace(/'/g, "\\'")}')">${o}</div>`;
         });
-        
-        gTotal++; // 增加總題數計數
+        gTotal++;
     }
-
     function checkG(btn, i, ans, note) {
-        // 鎖定所有按鈕
-        document.querySelectorAll('#g-options .q-opt').forEach(b => b.style.pointerEvents = 'none');
-
-        if (i === ans) {
-            btn.classList.add('correct');
-            gScore++;
-            document.getElementById('g-feedback').innerHTML = `<span style="color:#10b981">✅ 正確！</span><br><span style="font-size:14px; color:#555; font-weight:normal;">解析：${note}</span>`;
-            document.getElementById('g-feedback').style.background = "#d1fae5";
-        } else {
-            btn.classList.add('wrong');
-            // 標示正確答案
-            document.querySelectorAll('#g-options .q-opt')[ans].classList.add('correct');
-            document.getElementById('g-feedback').innerHTML = `<span style="color:#ef4444">❌ 錯誤！</span><br><span style="font-size:14px; color:#555; font-weight:normal;">解析：${note}</span>`;
-            document.getElementById('g-feedback').style.background = "#fee2e2";
+        document.querySelectorAll('#g-options .q-opt').forEach(b=>b.style.pointerEvents='none');
+        if(i===ans) { 
+            btn.classList.add('correct'); gScore++; 
+            document.getElementById('g-feedback').innerHTML=`✅ 正確<br><span style="font-size:14px;color:#555">${note}</span>`; 
         }
-
-        // 更新即時分數
+        else { 
+            btn.classList.add('wrong'); 
+            document.querySelectorAll('#g-options .q-opt')[ans].classList.add('correct'); 
+            document.getElementById('g-feedback').innerHTML=`❌ 錯誤<br><span style="font-size:14px;color:#555">${note}</span>`; 
+            // 紀錄錯誤
+            recordMistake(window.currentGItem.q, window.currentGItem.options[window.currentGItem.ans]);
+        }
         document.getElementById('g-score').innerText = gScore;
-        
-        // 準備下一題索引
         gIdx++;
-        document.getElementById('g-next-btn').style.display = 'inline-block';
+        document.getElementById('g-next-btn').style.display='inline-block';
     }
 
     // --- 綜合測驗 ---
     function initMixedQuiz() {
-        xList = []; xIdx=0; xScore=0;
+        startTracking(["綜合模擬考"]);
+        xQuestions=[]; xIndex=0; xScore=0;
         document.getElementById('x-next-btn').style.display='none';
         document.getElementById('x-restart-btn').style.display='none';
         document.getElementById('x-content').style.display='block';
-        document.getElementById('save-status').innerText = '';
-
-        const vPool = [...data.vocabulary, ...(data.phrases||[])];
-        const gPool = data.grammarQuiz || [];
         
-        // 5 Memory
+        const vPool = [...data.vocabulary, ...(data.phrases||[])];
+        const gPool = [...(data.grammarQuiz||[])];
+        
         for(let i=0; i<5; i++) {
             const item = vPool[Math.floor(Math.random()*vPool.length)];
-            xList.push({type:'memory', item: item});
+            xQuestions.push({type:'memory', item:item});
         }
-        // 5 Cloze
         for(let i=0; i<5; i++) {
             let item, attempts=0;
             while(attempts++<20) {
                 item = vPool[Math.floor(Math.random()*vPool.length)];
                 if(item.example.toLowerCase().includes((item.word||item.phrase).toLowerCase())) break;
             }
-            xList.push({type:'cloze', item: item});
+            xQuestions.push({type:'cloze', item:item});
         }
-        // 10 Grammar
-        gPool.sort(()=>Math.random()-0.5).slice(0,10).forEach(q => {
-            xList.push({type:'grammar', q:q});
-        });
-        xList.sort(()=>Math.random()-0.5);
-        renderMixed();
+        gPool.sort(()=>Math.random()-0.5).slice(0,10).forEach(q=>xQuestions.push({type:'grammar', q:q}));
+        xQuestions.sort(()=>Math.random()-0.5);
+        nextMixedQuestion();
     }
 
-    function renderMixed() {
-        if(xIdx >= xList.length) {
+    function nextMixedQuestion() {
+        if(xIndex >= xQuestions.length) {
+            endSession('綜合模擬考', xScore, 20, 'quiz-mixed');
+            // 隱藏測驗區
             document.getElementById('x-content').style.display='none';
             document.getElementById('x-feedback').innerHTML = `<h2>測驗結束</h2><p>總分：${xScore} / 20</p>`;
             document.getElementById('x-next-btn').style.display='none';
             document.getElementById('x-restart-btn').style.display='inline-block';
-            
-            // 自動上傳
-            document.getElementById('save-status').innerText = "正在上傳成績...";
-            sendScore('綜合模擬考', xScore, 20);
             return;
         }
-
-        const q = xList[xIdx];
+        document.getElementById('x-content').style.display='block';
         document.getElementById('x-feedback').innerHTML='';
         document.getElementById('x-next-btn').style.display='none';
+        
+        const q = xQuestions[xIndex];
+        window.currentXItem = q; // 暫存
+
         const div = document.getElementById('x-options');
         div.innerHTML='';
+        document.getElementById('x-score').innerText = `進度：${xIndex+1} / 20 | 得分：${xScore}`;
         
+        // 渲染題目 (同前版邏輯)
+        let correctStr = ""; 
         if(q.type==='memory') {
             const word = q.item.word || q.item.phrase;
-            document.getElementById('x-tag').innerText = "單字記憶";
+            correctStr = word;
+            document.getElementById('x-tag-container').innerHTML = '<span class="q-tag tag-memory">單字記憶</span>';
             document.getElementById('x-question').innerHTML = `<span style="font-size:16px;">${q.item.meaning}</span> 是哪個字？`;
-            document.getElementById('x-extra').innerText = '';
-            
+            document.getElementById('x-extra-info').innerText = '';
             let opts = [word];
             const pool = [...data.vocabulary, ...(data.phrases||[])];
             while(opts.length<4) {
@@ -651,15 +662,14 @@
             }
             opts.sort(()=>Math.random()-0.5);
             xAns = opts.indexOf(word);
-            opts.forEach((o, i) => { div.innerHTML += `<div class="q-opt" onclick="checkX(this, ${i})">${o}</div>`; });
-
+            opts.forEach((o, i) => div.innerHTML+=`<div class="q-opt" onclick="checkX(this, ${i}, '${correctStr}')">${o}</div>`);
         } else if(q.type==='cloze') {
             const word = q.item.word || q.item.phrase;
+            correctStr = word;
             const regex = new RegExp(word, "gi");
-            document.getElementById('x-tag').innerText = "句子填空";
+            document.getElementById('x-tag-container').innerHTML = '<span class="q-tag tag-cloze">句子填空</span>';
             document.getElementById('x-question').innerHTML = q.item.example.replace(regex, "______");
-            document.getElementById('x-extra').innerText = `提示: ${q.item.meaning}`;
-            
+            document.getElementById('x-extra-info').innerText = `提示: ${q.item.meaning}`;
             let opts = [word];
             const pool = [...data.vocabulary, ...(data.phrases||[])];
             while(opts.length<4) {
@@ -668,25 +678,37 @@
             }
             opts.sort(()=>Math.random()-0.5);
             xAns = opts.indexOf(word);
-            opts.forEach((o, i) => { div.innerHTML += `<div class="q-opt" onclick="checkX(this, ${i})">${o}</div>`; });
-
-        } else if(q.type==='grammar') {
-            document.getElementById('x-tag').innerText = "文法";
+            opts.forEach((o, i) => div.innerHTML+=`<div class="q-opt" onclick="checkX(this, ${i}, '${correctStr}')">${o}</div>`);
+        } else {
+            document.getElementById('x-tag-container').innerHTML = '<span class="q-tag tag-grammar">文法</span>';
             document.getElementById('x-question').innerText = q.q.q;
-            document.getElementById('x-extra').innerText = '';
+            document.getElementById('x-extra-info').innerText = '';
             xAns = q.q.ans;
-            q.q.options.forEach((o, i) => { div.innerHTML += `<div class="q-opt" onclick="checkX(this, ${i}, '${q.q.note}')">${o}</div>`; });
+            correctStr = q.q.options[xAns];
+            q.q.options.forEach((o, i) => div.innerHTML+=`<div class="q-opt" onclick="checkX(this, ${i}, '${correctStr}', '${q.q.note.replace(/'/g, "\\'")}')">${o}</div>`);
         }
     }
 
-    function checkX(btn, i, note) {
+    function checkX(btn, i, correctStr, note) {
         document.querySelectorAll('#x-options .q-opt').forEach(b=>b.style.pointerEvents='none');
-        if(i===xAns) { btn.classList.add('correct'); xScore++; document.getElementById('x-feedback').innerHTML='✅ 正確'; }
-        else { btn.classList.add('wrong'); document.querySelectorAll('#x-options .q-opt')[xAns].classList.add('correct'); document.getElementById('x-feedback').innerHTML='❌ 錯誤'; }
+        if(i===xAns) { 
+            btn.classList.add('correct'); xScore++; 
+            document.getElementById('x-feedback').innerHTML='✅ 正確'; 
+        } else { 
+            btn.classList.add('wrong'); 
+            document.querySelectorAll('#x-options .q-opt')[xAns].classList.add('correct'); 
+            document.getElementById('x-feedback').innerHTML='❌ 錯誤'; 
+            // 紀錄錯誤
+            let qTitle = "";
+            if(window.currentXItem.type === 'grammar') qTitle = window.currentXItem.q.q;
+            else if(window.currentXItem.type === 'memory') qTitle = window.currentXItem.item.meaning;
+            else qTitle = "句子填空題";
+            recordMistake(qTitle, correctStr);
+        }
         if(note) document.getElementById('x-feedback').innerHTML += `<br><span style="font-size:14px;color:#555">${note}</span>`;
+        xIndex++;
         document.getElementById('x-next-btn').style.display='inline-block';
     }
-    function nextMixedQ() { xIdx++; renderMixed(); }
 
 </script>
 
