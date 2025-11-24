@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>私中英語特訓班 (線上完整版)</title>
+    <title>私中英語特訓班 (完整功能版)</title>
+    <script src="data.js"></script>
     <style>
         /* --- 基礎設定 --- */
         body { font-family: 'Segoe UI', 'Microsoft JhengHei', sans-serif; background-color: #f4f7f6; margin: 0; color: #333; }
@@ -17,6 +18,14 @@
         .login-input { width: 80%; padding: 10px; margin: 20px 0; font-size: 18px; border: 2px solid #ddd; border-radius: 5px; }
         .login-btn { padding: 10px 20px; background: #667eea; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; width: 100%; }
         #user-display { position: absolute; top: 15px; right: 20px; color: white; font-weight: bold; font-size: 14px; text-shadow: 0 2px 4px rgba(0,0,0,0.3);}
+
+        /* Report Modal (回報視窗) */
+        #report-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 2000; justify-content: center; align-items: center; }
+        .report-box { background: white; padding: 25px; border-radius: 10px; width: 90%; max-width: 400px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
+        .report-textarea { width: 100%; height: 80px; margin: 10px 0; padding: 8px; border: 1px solid #ccc; border-radius: 5px; font-family: inherit; resize: none; }
+        .report-actions { text-align: right; margin-top: 10px; }
+        .btn-cancel { background: #999; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; margin-right: 10px; }
+        .btn-submit { background: #e74c3c; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; }
 
         /* Navigation */
         nav { display: flex; justify-content: center; background: #fff; padding: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); position: sticky; top: 0; z-index: 100; flex-wrap: wrap; gap: 10px; }
@@ -34,10 +43,6 @@
         .section.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* Loading */
-        #loading-msg { text-align: center; font-size: 20px; color: #667eea; margin-top: 50px; display: none;}
-        #error-msg { text-align: center; color: red; margin-top: 50px; display: none; border: 1px solid red; padding: 20px; background: #fff0f0; border-radius: 10px;}
-
         /* Components */
         .setup-box { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 20px; }
         .setup-title { font-size: 18px; font-weight: bold; margin-bottom: 15px; border-left: 4px solid #667eea; padding-left: 10px; color: #444; }
@@ -52,10 +57,18 @@
         .q-opt:hover { background: #f8f9ff; }
         .q-opt.correct { background: #d1fae5; border-color: #10b981; }
         .q-opt.wrong { background: #fee2e2; border-color: #ef4444; }
-        .q-feedback { margin-top: 20px; font-weight: bold; min-height: 20px; padding: 10px; border-radius: 5px; }
+        .q-feedback { margin-top: 20px; font-weight: bold; min-height: 20px; padding: 10px; border-radius: 5px; position: relative; }
         .next-btn { margin-top:20px; padding:12px 30px; background:#667eea; color:white; border:none; border-radius:25px; cursor:pointer; font-size: 16px; font-weight:bold;}
         .start-btn { width: 100%; padding: 15px; font-size: 18px; background: #20c997; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
         
+        /* Report Button Style */
+        .report-btn {
+            position: absolute; top: 10px; right: 10px;
+            background: transparent; color: #999; border: 1px solid #ddd;
+            padding: 2px 8px; border-radius: 4px; font-size: 12px; cursor: pointer;
+        }
+        .report-btn:hover { background: #fff0f0; color: #e74c3c; border-color: #e74c3c; }
+
         /* 單字庫 */
         .vocab-cats { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; justify-content: center; }
         .v-cat-btn { background: white; border: 1px solid #ddd; padding: 8px 16px; border-radius: 20px; cursor: pointer; transition: 0.2s; }
@@ -102,10 +115,25 @@
     </div>
 </div>
 
+<div id="report-modal">
+    <div class="report-box">
+        <h3 style="margin-top:0; color:#e74c3c;">🚩 回報題目問題</h3>
+        <div style="font-size:14px; color:#666; margin-bottom:10px; background:#f9f9f9; padding:10px; border-radius:5px;">
+            <strong>題目：</strong> <span id="report-q-content">...</span>
+        </div>
+        <p style="margin:0; font-size:14px;">這題有什麼問題？(選填)</p>
+        <textarea id="report-comment" class="report-textarea" placeholder="例如：答案怪怪的、拼字錯誤..."></textarea>
+        <div class="report-actions">
+            <button class="btn-cancel" onclick="closeReportModal()">取消</button>
+            <button class="btn-submit" onclick="submitReport()">送出回報</button>
+        </div>
+    </div>
+</div>
+
 <header>
     <div id="user-display"></div>
     <h1>🚀 私中英語特訓班</h1>
-    <div class="subtitle">線上特訓 + 數據追蹤</div>
+    <div class="subtitle">全方位數據分析版</div>
 </header>
 
 <nav>
@@ -122,21 +150,11 @@
     </div>
 </nav>
 
-<div id="loading-msg">正在讀取 data.json ...</div>
-<div id="error-msg">
-    <h3>⚠️ 無法讀取 data.json</h3>
-    <p>請確認 GitHub Repository 中已上傳 data.json 檔案。</p>
-</div>
-
-<div class="container" id="main-content" style="display: none;">
+<div class="container" id="main-content">
     
     <div id="vocab" class="section active">
         <div class="vocab-cats" id="vocab-cat-btns"></div>
-        <div class="vocab-grid" id="vocab-container">
-            <div style="grid-column: 1/-1; text-align: center; color: #888; padding: 20px;">
-                👆 請點擊上方按鈕選擇一個主題
-            </div>
-        </div>
+        <div class="vocab-grid" id="vocab-container"></div>
     </div>
 
     <div id="flashcard" class="section">
@@ -148,7 +166,6 @@
         <div id="fc-game" style="display:none;">
             <button onclick="endSession('翻卡練習', 0, 0, 'flashcard')" style="float:right; padding:5px 10px; background:#e74c3c; color:white; border:none; border-radius:5px; cursor:pointer;">⏹ 結束並上傳紀錄</button>
             <button onclick="resetSection('flashcard')" style="margin-bottom:10px;">← 重選主題</button>
-            
             <div class="flashcard-area">
                 <div class="flashcard" id="card" onclick="flipCard()">
                     <div class="fc-face fc-front">
@@ -210,7 +227,7 @@
     <div id="quiz-grammar" class="section">
         <div id="g-setup" class="setup-box">
             <div class="setup-title">文法挑戰</div>
-            <p style="color:#666; margin-bottom:20px;">題庫收錄重點文法，每次測驗隨機出題。</p>
+            <p style="color:#666; margin-bottom:20px;">題庫收錄約 100 題重點文法，每次測驗將隨機出題。</p>
             <button class="start-btn" onclick="initGrammarSession()">開始文法測驗</button>
         </div>
         <div id="g-game" class="quiz-box" style="display:none;">
@@ -218,7 +235,7 @@
             <div class="q-score">得分：<span id="g-score">0</span> / <span id="g-total">0</span></div>
             <h2 id="g-question" class="q-text">Q</h2>
             <div class="q-options" id="g-options"></div>
-            <div id="g-feedback" class="q-feedback"></div>
+            <div id="g-feedback"></div>
             <button id="g-next-btn" class="next-btn" style="display:none" onclick="nextGrammarQ()">下一題</button>
         </div>
     </div>
@@ -244,19 +261,19 @@
     // ==========================================
     // ⚠️ 請將下方網址換成你的 Apps Script 網址
     // ==========================================
-    const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/library/d/19R1MeJckkp34xlESjuewxLqdswCjvGnyeI_FmYoBzxTGUCGIVU0apgH_/3'; 
+    const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/library/d/19R1MeJckkp34xlESjuewxLqdswCjvGnyeI_FmYoBzxTGUCGIVU0apgH_/1'; 
 
-    // 全域變數
     let currentUser = "";
     let data = {};
     let allCategories = [];
     
-    // 數據紀錄變數
+    // Data Tracking
     let sessionStartTime = 0;
     let sessionThemes = []; 
     let sessionMistakes = []; 
+    let currentQuestionText = ""; // 紀錄當前題目文字，供回報使用
 
-    // 測驗狀態
+    // Quiz State
     let activeList = [];
     let fcIdx=0;
     let mScore=0, mTotal=0, mAns=-1;
@@ -264,7 +281,7 @@
     let gList=[], gIdx=0, gScore=0, gTotal=0;
     let xQuestions=[], xIndex=0, xScore=0, xAns=-1;
 
-    // 初始化：使用 fetch 讀取 json
+    // Init
     window.onload = async function() {
         document.getElementById('loading-msg').style.display = 'block';
         try {
@@ -302,7 +319,41 @@
         renderMultiSelect('c-cat-list');
     }
 
-    // --- 資料傳輸 ---
+    // --- 回報問題功能 ---
+    function openReportModal() {
+        document.getElementById('report-q-content').innerText = currentQuestionText;
+        document.getElementById('report-comment').value = ""; // 清空
+        document.getElementById('report-modal').style.display = 'flex';
+    }
+    
+    function closeReportModal() {
+        document.getElementById('report-modal').style.display = 'none';
+    }
+
+    function submitReport() {
+        if(!GOOGLE_SCRIPT_URL.includes("script.google.com")) return alert("請先設定 Google Script 網址");
+        
+        const qText = document.getElementById('report-q-content').innerText;
+        const comment = document.getElementById('report-comment').value;
+        
+        const payload = {
+            action: 'report_issue', // 告訴後端這是回報
+            name: currentUser,
+            question: qText,
+            comment: comment
+        };
+
+        fetch(GOOGLE_SCRIPT_URL, {
+            method: 'POST', mode: 'no-cors', 
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(payload)
+        }).then(()=>{
+            alert("感謝回報！我們會盡快檢查。");
+            closeReportModal();
+        }).catch(e => alert("傳送失敗"));
+    }
+
+    // --- 資料傳輸 (成績) ---
     function startTracking(themesArray) {
         sessionStartTime = Date.now();
         sessionThemes = themesArray || ["綜合/隨機"];
@@ -319,6 +370,7 @@
         
         if(GOOGLE_SCRIPT_URL.includes("script.google.com")) {
             const payload = {
+                action: 'submit_score',
                 name: currentUser,
                 type: type,
                 score: score,
@@ -337,7 +389,7 @@
         resetSection(resetId);
     }
 
-    // --- 介面導覽 ---
+    // --- 介面 Helper ---
     function showTab(id) {
         document.querySelectorAll('.section').forEach(d => d.classList.remove('active'));
         document.getElementById(id).classList.add('active');
@@ -345,15 +397,17 @@
         document.getElementById('btn-'+id).classList.add('active');
         if(id==='quiz-mixed') initMixedQuiz();
     }
-
     function resetSection(id) {
         if(id==='flashcard') { document.getElementById('fc-setup').style.display='block'; document.getElementById('fc-game').style.display='none'; }
         if(id==='quiz-memory') { document.getElementById('m-setup').style.display='block'; document.getElementById('m-game').style.display='none'; }
         if(id==='quiz-cloze') { document.getElementById('c-setup').style.display='block'; document.getElementById('c-game').style.display='none'; }
         if(id==='quiz-grammar') { document.getElementById('g-setup').style.display='block'; document.getElementById('g-game').style.display='none'; }
     }
+    function getReportBtn() {
+        return `<button class="report-btn" onclick="openReportModal()">🚩 回報問題</button>`;
+    }
 
-    // --- 多選 Helper ---
+    // --- 多選單 & 單字庫 ---
     function renderMultiSelect(id) {
         const div = document.getElementById(id);
         div.innerHTML = `<label class="cat-label"><input type="checkbox" value="PHRASES"> 片語</label>`;
@@ -366,9 +420,7 @@
             }
         });
     }
-    function getSelectedThemes(id) {
-        return Array.from(document.querySelectorAll(`#${id} input:checked`)).map(cb => cb.value);
-    }
+    function getSelectedThemes(id) { return Array.from(document.querySelectorAll(`#${id} input:checked`)).map(cb => cb.value); }
     function getSelectedItems(id) {
         const inputs = document.querySelectorAll(`#${id} input:checked`);
         let items = [];
@@ -378,8 +430,6 @@
         });
         return items;
     }
-
-    // --- 單字庫 ---
     function initVocabView() {
         const div = document.getElementById('vocab-cat-btns');
         div.innerHTML = '';
@@ -388,7 +438,6 @@
         pBtn.innerText = "🗣️ 片語 (Phrases)";
         pBtn.onclick = () => renderVocabList('PHRASES', pBtn);
         div.appendChild(pBtn);
-
         allCategories.forEach((c, i) => {
             const btn = document.createElement('button');
             btn.className = 'v-cat-btn';
@@ -456,10 +505,11 @@
         
         const item = activeList[Math.floor(Math.random()*activeList.length)];
         window.currentMItem = item; 
-        const correct = item.word || item.phrase;
+        currentQuestionText = `${item.meaning} (測驗: ${item.word||item.phrase})`; // 紀錄給回報用
+
         document.getElementById('m-question').innerHTML = `<span style="font-size:16px;color:#888">請問</span><br>${item.meaning}<br><span style="font-size:16px;color:#888">是哪個字？</span>`;
         
-        let opts = [correct];
+        let opts = [item.word || item.phrase];
         const pool = [...data.vocabulary, ...(data.phrases||[])];
         while(opts.length<4) {
             let r = pool[Math.floor(Math.random()*pool.length)];
@@ -467,19 +517,24 @@
             if(!opts.includes(w)) opts.push(w);
         }
         opts.sort(()=>Math.random()-0.5);
-        mAns = opts.indexOf(correct);
+        mAns = opts.indexOf(item.word || item.phrase);
         
         const div = document.getElementById('m-options');
         div.innerHTML='';
-        opts.forEach((o, i) => { div.innerHTML += `<div class="q-opt" onclick="checkM(this, ${i}, '${o}')">${o}</div>`; });
+        opts.forEach((o, i) => {
+            div.innerHTML += `<div class="q-opt" onclick="checkM(this, ${i})">${o}</div>`;
+        });
         mTotal++;
     }
-    function checkM(btn, i, sel) {
+    function checkM(btn, i) {
         document.querySelectorAll('#m-options .q-opt').forEach(b=>b.style.pointerEvents='none');
-        if(i===mAns) { btn.classList.add('correct'); mScore++; document.getElementById('m-feedback').innerHTML='✅ 正確'; }
-        else { 
+        const feedback = document.getElementById('m-feedback');
+        if(i===mAns) { 
+            btn.classList.add('correct'); mScore++; 
+            feedback.innerHTML=`<span style="color:#10b981; font-weight:bold;">✅ 正確</span>${getReportBtn()}`; 
+        } else { 
             btn.classList.add('wrong'); document.querySelectorAll('#m-options .q-opt')[mAns].classList.add('correct'); 
-            document.getElementById('m-feedback').innerHTML='❌ 錯誤';
+            feedback.innerHTML=`<span style="color:#ef4444; font-weight:bold;">❌ 錯誤</span>${getReportBtn()}`;
             recordMistake(window.currentMItem.meaning, (window.currentMItem.word||window.currentMItem.phrase));
         }
         document.getElementById('m-score').innerText = mScore;
@@ -511,8 +566,11 @@
             if(attempts++ > 20) break;
         }
         window.currentCItem = item;
+        currentQuestionText = sent; // 紀錄完整句子供回報
+
         const regex = new RegExp(word, "gi");
-        document.getElementById('c-sentence').innerText = sent.replace(regex, "______");
+        const qSent = sent.replace(regex, "______");
+        document.getElementById('c-sentence').innerText = qSent;
         document.getElementById('c-hint').innerText = `提示：${item.meaning}`;
         
         let opts = [word];
@@ -527,16 +585,21 @@
         
         const div = document.getElementById('c-options');
         div.innerHTML='';
-        opts.forEach((o, i) => { div.innerHTML += `<div class="q-opt" onclick="checkC(this, ${i})">${o}</div>`; });
+        opts.forEach((o, i) => {
+            div.innerHTML += `<div class="q-opt" onclick="checkC(this, ${i})">${o}</div>`;
+        });
         cTotal++;
     }
     function checkC(btn, i) {
         document.querySelectorAll('#c-options .q-opt').forEach(b=>b.style.pointerEvents='none');
         const full = window.currentCItem.example;
-        if(i===cAns) { btn.classList.add('correct'); cScore++; document.getElementById('c-feedback').innerHTML=`✅ 正確<br>${full}`; }
-        else { 
+        const feedback = document.getElementById('c-feedback');
+        if(i===cAns) { 
+            btn.classList.add('correct'); cScore++; 
+            feedback.innerHTML=`<span style="color:#10b981; font-weight:bold;">✅ 正確</span><br>${full}${getReportBtn()}`; 
+        } else { 
             btn.classList.add('wrong'); document.querySelectorAll('#c-options .q-opt')[cAns].classList.add('correct'); 
-            document.getElementById('c-feedback').innerHTML=`❌ 錯誤<br>${full}`;
+            feedback.innerHTML=`<span style="color:#ef4444; font-weight:bold;">❌ 錯誤</span><br>${full}${getReportBtn()}`; 
             recordMistake(document.getElementById('c-sentence').innerText, (window.currentCItem.word||window.currentCItem.phrase));
         }
         document.getElementById('c-score').innerText = cScore;
@@ -565,6 +628,8 @@
         
         const q = gList[gIdx];
         window.currentGItem = q;
+        currentQuestionText = q.q;
+
         document.getElementById('g-question').innerText = q.q;
         const div = document.getElementById('g-options');
         div.innerHTML='';
@@ -573,10 +638,13 @@
     }
     function checkG(btn, i, ans, note) {
         document.querySelectorAll('#g-options .q-opt').forEach(b=>b.style.pointerEvents='none');
-        if(i===ans) { btn.classList.add('correct'); gScore++; document.getElementById('g-feedback').innerHTML=`✅ 正確<br><span style="font-size:14px;color:#555">${note}</span>`; }
-        else { 
+        const feedback = document.getElementById('g-feedback');
+        if(i===ans) { 
+            btn.classList.add('correct'); gScore++; 
+            feedback.innerHTML=`✅ 正確<br><span style="font-size:14px;color:#555">${note}</span>${getReportBtn()}`; 
+        } else { 
             btn.classList.add('wrong'); document.querySelectorAll('#g-options .q-opt')[ans].classList.add('correct'); 
-            document.getElementById('g-feedback').innerHTML=`❌ 錯誤<br><span style="font-size:14px;color:#555">${note}</span>`;
+            feedback.innerHTML=`❌ 錯誤<br><span style="font-size:14px;color:#555">${note}</span>${getReportBtn()}`;
             recordMistake(window.currentGItem.q, window.currentGItem.options[window.currentGItem.ans]);
         }
         document.getElementById('g-score').innerText = gScore;
@@ -629,6 +697,7 @@
         
         let correctStr = "";
         if(q.type==='memory') {
+            currentQuestionText = q.item.meaning;
             const word = q.item.word || q.item.phrase;
             correctStr = word;
             document.getElementById('x-tag-container').innerHTML = '<span class="q-tag tag-memory">單字記憶</span>';
@@ -644,8 +713,10 @@
             const word = q.item.word || q.item.phrase;
             correctStr = word;
             const regex = new RegExp(word, "gi");
+            const qSent = q.item.example.replace(regex, "______");
+            currentQuestionText = qSent;
             document.getElementById('x-tag-container').innerHTML = '<span class="q-tag tag-cloze">句子填空</span>';
-            document.getElementById('x-question').innerHTML = q.item.example.replace(regex, "______");
+            document.getElementById('x-question').innerHTML = qSent;
             document.getElementById('x-extra-info').innerText = `提示: ${q.item.meaning}`;
             let opts = [word];
             const pool = [...data.vocabulary, ...(data.phrases||[])];
@@ -654,6 +725,7 @@
             xAns = opts.indexOf(word);
             opts.forEach((o, i) => div.innerHTML+=`<div class="q-opt" onclick="checkX(this, ${i}, '${correctStr}')">${o}</div>`);
         } else {
+            currentQuestionText = q.q.q;
             document.getElementById('x-tag-container').innerHTML = '<span class="q-tag tag-grammar">文法</span>';
             document.getElementById('x-question').innerText = q.q.q;
             document.getElementById('x-extra-info').innerText = '';
@@ -664,17 +736,21 @@
     }
     function checkX(btn, i, correctStr, note) {
         document.querySelectorAll('#x-options .q-opt').forEach(b=>b.style.pointerEvents='none');
-        if(i===xAns) { btn.classList.add('correct'); xScore++; document.getElementById('x-feedback').innerHTML='✅ 正確'; }
-        else { 
+        const feedback = document.getElementById('x-feedback');
+        if(i===xAns) { 
+            btn.classList.add('correct'); xScore++; 
+            feedback.innerHTML=`✅ 正確${getReportBtn()}`; 
+        } else { 
             btn.classList.add('wrong'); document.querySelectorAll('#x-options .q-opt')[xAns].classList.add('correct'); 
-            document.getElementById('x-feedback').innerHTML='❌ 錯誤'; 
+            feedback.innerHTML=`❌ 錯誤${getReportBtn()}`; 
+            
             let qTitle = "";
             if(window.currentXItem.type === 'grammar') qTitle = window.currentXItem.q.q;
             else if(window.currentXItem.type === 'memory') qTitle = window.currentXItem.item.meaning;
             else qTitle = "句子填空題";
             recordMistake(qTitle, correctStr);
         }
-        if(note) document.getElementById('x-feedback').innerHTML += `<br><span style="font-size:14px;color:#555">${note}</span>`;
+        if(note) feedback.innerHTML += `<br><span style="font-size:14px;color:#555">${note}</span>`;
         xIndex++;
         document.getElementById('x-next-btn').style.display='inline-block';
     }
