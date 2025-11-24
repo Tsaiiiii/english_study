@@ -76,7 +76,7 @@
 
 <nav>
     <div class="nav-group">
-        <button onclick="showTab('vocab')" class="active" id="btn-vocab">📚 單字庫</button>
+        <button onclick="showTab('vocab')" class="active" id="btn-vocab">📚 單字片語</button>
         <button onclick="showTab('flashcard')" id="btn-flashcard">📇 翻卡</button>
         <button onclick="showTab('grammar')" id="btn-grammar">💡 文法</button>
     </div>
@@ -153,11 +153,20 @@
     </div>
 
     <div id="quiz-grammar" class="section">
-        <div class="quiz-box">
-            <h3 id="g-progress">題號：1 / 100</h3>
-            <h2 id="g-question">Q</h2>
+        <div id="g-setup" class="setup-box">
+            <div class="setup-title">文法挑戰</div>
+            <p style="color:#666; margin-bottom:20px;">題庫收錄約 100 題重點文法，每次測驗將隨機出題。</p>
+            <button class="start-btn" onclick="initGrammarSession()">開始文法測驗</button>
+        </div>
+
+        <div id="g-game" class="quiz-box" style="display:none;">
+            <button onclick="endQuiz('文法測驗', gScore, gTotal, 'quiz-grammar')" style="float:right; font-size:12px; cursor:pointer;">結束並上傳</button>
+            <div class="q-score">得分：<span id="g-score">0</span> / <span id="g-total">0</span></div>
+            
+            <h2 id="g-question" class="q-text">Q</h2>
+            
             <div id="g-options" style="margin-top:20px;"></div>
-            <div id="g-feedback"></div>
+            <div id="g-feedback" class="q-feedback"></div>
             <button id="g-next-btn" class="next-btn" style="display:none" onclick="nextGrammarQ()">下一題</button>
         </div>
     </div>
@@ -269,6 +278,7 @@
         if(id==='flashcard') { document.getElementById('fc-setup').style.display='block'; document.getElementById('fc-game').style.display='none'; }
         if(id==='quiz-memory') { document.getElementById('m-setup').style.display='block'; document.getElementById('m-game').style.display='none'; }
         if(id==='quiz-cloze') { document.getElementById('c-setup').style.display='block'; document.getElementById('c-game').style.display='none'; }
+        if(id==='quiz-grammar') { document.getElementById('g-setup').style.display='block'; document.getElementById('g-game').style.display='none'; }
     }
 
     // --- 資料上傳 Google Sheets ---
@@ -307,22 +317,70 @@
     }
 
     // --- 單字庫 ---
+    // --- 單字庫 (修正版：加入片語按鈕) ---
     function initVocabView() {
         const div = document.getElementById('vocab-cat-btns');
-        allCategories.forEach((c, i) => {
+        div.innerHTML = ''; // 清空按鈕區
+
+        // 1. 先加入「片語」按鈕
+        const phraseBtn = document.createElement('button');
+        phraseBtn.className = 'v-cat-btn';
+        phraseBtn.innerText = "🗣️ 片語 (Phrases)";
+        phraseBtn.onclick = () => renderVocabList('PHRASES', phraseBtn);
+        div.appendChild(phraseBtn);
+
+        // 2. 再加入其他單字分類按鈕
+        allCategories.forEach((c) => {
             const btn = document.createElement('button');
+            btn.className = 'v-cat-btn';
             btn.innerText = c;
-            btn.style.margin = "5px";
-            btn.onclick = () => renderVocabList(c);
+            btn.onclick = () => renderVocabList(c, btn);
             div.appendChild(btn);
-            if(i===0) renderVocabList(c);
         });
+
+        // 預設顯示第一個分類 (通常是片語或第一個單字主題)
+        if (data.phrases && data.phrases.length > 0) {
+            renderVocabList('PHRASES', phraseBtn);
+        } else if (allCategories.length > 0) {
+            renderVocabList(allCategories[0], div.children[1]);
+        }
     }
-    function renderVocabList(cat) {
+
+    function renderVocabList(cat, btnElement) {
+        // 更新按鈕樣式 (Highlight 目前選中的按鈕)
+        document.querySelectorAll('.v-cat-btn').forEach(b => b.classList.remove('active'));
+        if(btnElement) btnElement.classList.add('active');
+
         const div = document.getElementById('vocab-container');
         div.innerHTML = '';
-        data.vocabulary.filter(v => (v.category||'其他')===cat).forEach(v => {
-            div.innerHTML += `<div class="vocab-item"><div class="v-word">${v.word}</div><div class="v-mean">${v.meaning}</div></div>`;
+
+        // 判斷是「片語」還是「一般單字」
+        let items = [];
+        if (cat === 'PHRASES') {
+            items = data.phrases || [];
+        } else {
+            items = data.vocabulary.filter(v => (v.category || '其他') === cat);
+        }
+
+        // 渲染列表
+        if (items.length === 0) {
+            div.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:20px;color:#888;">暫無資料</div>';
+            return;
+        }
+
+        items.forEach(v => {
+            // 片語可能沒有 part (詞性)，預設顯示 phr.
+            const word = v.word || v.phrase;
+            const part = v.part || 'phr.';
+            // 判斷是否為片語樣式 (加上粉紅色邊框)
+            const extraClass = (cat === 'PHRASES') ? 'phrase-item' : '';
+            
+            div.innerHTML += `
+                <div class="vocab-item ${extraClass}">
+                    <div class="v-word">${word} <span class="v-part">${part}</span></div>
+                    <div class="v-mean">${v.meaning}</div>
+                    <div class="v-ex">${v.example}</div>
+                </div>`;
         });
     }
 
@@ -447,30 +505,85 @@
     }
 
     // --- 文法測驗 ---
-    function startGrammarQuiz() {
-        if(gList.length===0) return;
-        if(gIdx >= gList.length) { alert("文法題做完了！重新開始"); gIdx=0; gList.sort(()=>Math.random()-0.5); }
+    // --- 文法測驗 (更新版：Session 模式) ---
+    function initGrammarSession() {
+        // 1. 檢查是否有題目
+        if (!data.grammarQuiz || data.grammarQuiz.length === 0) {
+            alert("資料庫中沒有文法題目！");
+            return;
+        }
+
+        // 2. 初始化變數
+        gScore = 0;
+        gTotal = 0;
+        gIdx = 0;
         
-        const q = gList[gIdx];
-        document.getElementById('g-progress').innerText = `題號：${gIdx+1} / ${gList.length}`;
-        document.getElementById('g-question').innerText = q.q;
+        // 3. 隨機打亂題目順序
+        // 複製一份新的陣列來打亂，以免影響原始資料
+        gList = [...data.grammarQuiz].sort(() => Math.random() - 0.5);
+
+        // 4. 切換介面
+        document.getElementById('g-setup').style.display = 'none';
+        document.getElementById('g-game').style.display = 'block';
+        
+        // 5. 開始第一題
+        nextGrammarQ();
+    }
+
+    function nextGrammarQ() {
+        // 檢查是否做完所有題目
+        if (gIdx >= gList.length) {
+            alert("太厲害了！你已經做完所有 100 題文法了！\n將重新洗牌開始。");
+            gList.sort(() => Math.random() - 0.5);
+            gIdx = 0;
+        }
+
+        // 更新分數顯示
+        document.getElementById('g-score').innerText = gScore;
+        document.getElementById('g-total').innerText = gTotal;
+        
+        // 重置介面
         document.getElementById('g-feedback').innerHTML = '';
-        document.getElementById('g-next-btn').style.display='none';
-        
+        document.getElementById('g-next-btn').style.display = 'none';
+
+        // 載入題目
+        const q = gList[gIdx];
+        document.getElementById('g-question').innerText = q.q;
+
+        // 生成選項
         const div = document.getElementById('g-options');
-        div.innerHTML='';
+        div.innerHTML = '';
         q.options.forEach((o, i) => {
-            div.innerHTML += `<div class="q-opt" onclick="checkG(this, ${i}, ${q.ans}, '${q.note}')">${o}</div>`;
+            div.innerHTML += `<div class="q-opt" onclick="checkG(this, ${i}, ${q.ans}, '${q.note.replace(/'/g, "\\'")}')">${o}</div>`;
         });
+        
+        gTotal++; // 增加總題數計數
     }
+
     function checkG(btn, i, ans, note) {
-        document.querySelectorAll('#g-options .q-opt').forEach(b=>b.style.pointerEvents='none');
-        if(i===ans) { btn.classList.add('correct'); gScore++; document.getElementById('g-feedback').innerHTML=`✅ 正確<br>${note}`; }
-        else { btn.classList.add('wrong'); document.querySelectorAll('#g-options .q-opt')[ans].classList.add('correct'); document.getElementById('g-feedback').innerHTML=`❌ 錯誤<br>${note}`; }
+        // 鎖定所有按鈕
+        document.querySelectorAll('#g-options .q-opt').forEach(b => b.style.pointerEvents = 'none');
+
+        if (i === ans) {
+            btn.classList.add('correct');
+            gScore++;
+            document.getElementById('g-feedback').innerHTML = `<span style="color:#10b981">✅ 正確！</span><br><span style="font-size:14px; color:#555; font-weight:normal;">解析：${note}</span>`;
+            document.getElementById('g-feedback').style.background = "#d1fae5";
+        } else {
+            btn.classList.add('wrong');
+            // 標示正確答案
+            document.querySelectorAll('#g-options .q-opt')[ans].classList.add('correct');
+            document.getElementById('g-feedback').innerHTML = `<span style="color:#ef4444">❌ 錯誤！</span><br><span style="font-size:14px; color:#555; font-weight:normal;">解析：${note}</span>`;
+            document.getElementById('g-feedback').style.background = "#fee2e2";
+        }
+
+        // 更新即時分數
+        document.getElementById('g-score').innerText = gScore;
+        
+        // 準備下一題索引
         gIdx++;
-        document.getElementById('g-next-btn').style.display='inline-block';
+        document.getElementById('g-next-btn').style.display = 'inline-block';
     }
-    function nextGrammarQ() { startGrammarQuiz(); }
 
     // --- 綜合測驗 ---
     function initMixedQuiz() {
