@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>私中英語特訓班 (有聲完整版)</title>
-    <script src="data.js"></script>
+    <title>私中英語特訓班</title>
+    <link href="icon.png" rel="shortcut icon">
     <style>
         /* --- 基礎設定 --- */
         body { font-family: 'Segoe UI', 'Microsoft JhengHei', sans-serif; background-color: #f4f7f6; margin: 0; color: #333; }
@@ -61,7 +61,7 @@
         .q-opt:hover { background: #f8f9ff; }
         .q-opt.correct { background: #d1fae5; border-color: #10b981; }
         .q-opt.wrong { background: #fee2e2; border-color: #ef4444; }
-        .q-feedback { margin-top: 20px; font-weight: bold; min-height: 20px; padding: 10px; border-radius: 5px; }
+        .q-feedback { margin-top: 20px; font-weight: bold; min-height: 20px; padding: 10px; border-radius: 5px; position: relative; }
         .next-btn { margin-top:20px; padding:12px 30px; background:#667eea; color:white; border:none; border-radius:25px; cursor:pointer; font-size: 16px; font-weight:bold;}
         .start-btn { width: 100%; padding: 15px; font-size: 18px; background: #20c997; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
         
@@ -77,12 +77,12 @@
         .v-cat-btn { background: white; border: 1px solid #ddd; padding: 8px 16px; border-radius: 20px; cursor: pointer; transition: 0.2s; }
         .v-cat-btn.active { background: #667eea; color: white; border-color: #667eea; }
         .vocab-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 15px; }
-        .vocab-item { background: white; padding: 15px; border-radius: 8px; border-left: 5px solid #667eea; box-shadow: 0 2px 5px rgba(0,0,0,0.05); position: relative;}
+        .vocab-item { background: white; padding: 15px; border-radius: 8px; border-left: 5px solid #667eea; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         .phrase-item { border-left-color: #e91e63; }
-        .v-word { font-size: 18px; font-weight: bold; color: #2c3e50; display: flex; align-items: center; gap: 8px;}
+        .v-word { font-size: 18px; font-weight: bold; color: #2c3e50; display: flex; align-items: center; gap:8px; }
         .v-mean { color: #e67e22; font-weight: bold; margin: 5px 0; }
         
-        /* 🔊 發音按鈕樣式 */
+        /* 🔊 喇叭按鈕樣式 */
         .btn-audio { 
             cursor: pointer; font-size: 18px; padding: 2px 6px; 
             border-radius: 50%; background: #eee; border: 1px solid #ddd; 
@@ -144,7 +144,7 @@
 <header>
     <div id="user-display"></div>
     <h1>🚀 私中英語特訓班</h1>
-    <div class="subtitle">全方位數據分析版 (有聲)</div>
+    <div class="subtitle">全方位數據分析版</div>
 </header>
 
 <nav>
@@ -160,6 +160,12 @@
         <button onclick="showTab('quiz-mixed')" class="exam-btn" id="btn-quiz-mixed">🔥 綜合模擬考</button>
     </div>
 </nav>
+
+<div id="loading-msg">正在讀取 data.json ...</div>
+<div id="error-msg">
+    <h3>⚠️ 無法讀取 data.json</h3>
+    <p>請確認 GitHub Repository 中已上傳 data.json 檔案。</p>
+</div>
 
 <div class="container" id="main-content" style="display: none;">
     
@@ -239,7 +245,7 @@
     <div id="quiz-grammar" class="section">
         <div id="g-setup" class="setup-box">
             <div class="setup-title">文法挑戰</div>
-            <p style="color:#666; margin-bottom:20px;">題庫收錄重點文法，每次測驗隨機出題。</p>
+            <p style="color:#666; margin-bottom:20px;">題庫收錄約 100 題重點文法，每次測驗將隨機出題。</p>
             <button class="start-btn" onclick="initGrammarSession()">開始文法測驗</button>
         </div>
         <div id="g-game" class="quiz-box" style="display:none;">
@@ -271,7 +277,7 @@
 
 <script>
     // ==========================================
-    // ⚠️ 請將下方網址換成你的 Apps Script 網址
+    // ⚠️ 這裡填入你的 Apps Script 網址
     // ==========================================
     const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwc96555C6SWdZlcfbLvWt9_ZaxYklV37sTOLoq32QoqatiI7icbi422mp45TF31UEa/exec'; 
 
@@ -331,20 +337,19 @@
         renderMultiSelect('c-cat-list');
     }
 
-    // --- 發音功能 (New!) ---
+    // --- 發音功能 ---
     function playAudio(text) {
         if ('speechSynthesis' in window) {
             const utterance = new SpeechSynthesisUtterance(text);
-            utterance.lang = 'en-US'; // 設定美式英語
-            window.speechSynthesis.cancel(); // 停止目前正在播放的聲音
+            utterance.lang = 'en-US';
+            window.speechSynthesis.cancel();
             window.speechSynthesis.speak(utterance);
         } else {
-            alert("您的瀏覽器不支援發音功能");
+            console.warn("Browser not support TTS");
         }
     }
-
     function playCurrentCardAudio() {
-        if (activeList && activeList.length > 0) {
+        if(activeList && activeList.length > 0) {
             const item = activeList[fcIdx];
             playAudio(item.word || item.phrase);
         }
@@ -480,11 +485,11 @@
         div.innerHTML = '';
         let items = (cat==='PHRASES') ? (data.phrases||[]) : data.vocabulary.filter(v=>(v.category||'其他')===cat);
         if(items.length===0) { div.innerHTML='<div style="text-align:center;grid-column:1/-1">無資料</div>'; return; }
+        
         items.forEach(v => {
             const word = v.word || v.phrase;
             const part = v.part || 'phr.';
             const cls = (cat==='PHRASES') ? 'phrase-item' : '';
-            // Added audio button here
             div.innerHTML += `
                 <div class="vocab-item ${cls}">
                     <div class="v-word">
