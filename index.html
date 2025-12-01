@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>私中英語特訓班</title>
-    <link href="icon.png" rel="shortcut icon">
+    <title>私中英語特訓班 (有聲完整版)</title>
     <script src="data.js"></script>
     <style>
         /* --- 基礎設定 --- */
@@ -66,18 +65,10 @@
         .next-btn { margin-top:20px; padding:12px 30px; background:#667eea; color:white; border:none; border-radius:25px; cursor:pointer; font-size: 16px; font-weight:bold;}
         .start-btn { width: 100%; padding: 15px; font-size: 18px; background: #20c997; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
         
-        /* 修正後的 Report Button Style */
         .report-btn { 
-            display: inline-block;
-            margin-top: 10px;
-            background: white; 
-            color: #999; 
-            border: 1px solid #ddd; 
-            padding: 5px 12px; 
-            border-radius: 20px; 
-            font-size: 13px; 
-            cursor: pointer; 
-            transition: 0.2s;
+            display: inline-block; margin-top: 10px; background: white; 
+            color: #999; border: 1px solid #ddd; padding: 5px 12px; border-radius: 20px; 
+            font-size: 13px; cursor: pointer; transition: 0.2s;
         }
         .report-btn:hover { background: #fff0f0; color: #e74c3c; border-color: #e74c3c; }
 
@@ -86,10 +77,19 @@
         .v-cat-btn { background: white; border: 1px solid #ddd; padding: 8px 16px; border-radius: 20px; cursor: pointer; transition: 0.2s; }
         .v-cat-btn.active { background: #667eea; color: white; border-color: #667eea; }
         .vocab-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 15px; }
-        .vocab-item { background: white; padding: 15px; border-radius: 8px; border-left: 5px solid #667eea; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .vocab-item { background: white; padding: 15px; border-radius: 8px; border-left: 5px solid #667eea; box-shadow: 0 2px 5px rgba(0,0,0,0.05); position: relative;}
         .phrase-item { border-left-color: #e91e63; }
-        .v-word { font-size: 18px; font-weight: bold; color: #2c3e50; }
+        .v-word { font-size: 18px; font-weight: bold; color: #2c3e50; display: flex; align-items: center; gap: 8px;}
         .v-mean { color: #e67e22; font-weight: bold; margin: 5px 0; }
+        
+        /* 🔊 發音按鈕樣式 */
+        .btn-audio { 
+            cursor: pointer; font-size: 18px; padding: 2px 6px; 
+            border-radius: 50%; background: #eee; border: 1px solid #ddd; 
+            transition: 0.2s; user-select: none;
+        }
+        .btn-audio:hover { background: #667eea; color: white; border-color: #667eea; }
+        .btn-audio:active { transform: scale(0.95); }
 
         /* 單字卡 */
         .flashcard-area { display: flex; flex-direction: column; align-items: center; margin-top: 30px; perspective: 1000px; }
@@ -107,7 +107,6 @@
         .grammar-item { background: white; padding: 20px; border-radius: 8px; border-left: 5px solid #e67e22; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         .g-title { font-size: 18px; font-weight: bold; color: #d35400; }
         
-        /* 其他 */
         .cloze-sentence { font-size: 20px; color: #2c3e50; background: #f0f4f8; padding: 15px; border-radius: 8px; border-left: 5px solid #20c997; text-align: left;}
         .hint-text { font-size: 14px; color: #888; margin-bottom: 5px; }
         .q-tag { display: inline-block; padding: 4px 12px; border-radius: 15px; font-size: 12px; margin-bottom: 15px; color: white; font-weight: bold;}
@@ -145,7 +144,7 @@
 <header>
     <div id="user-display"></div>
     <h1>🚀 私中英語特訓班</h1>
-    <div class="subtitle">單字與文法加強版（測試中...）</div>
+    <div class="subtitle">全方位數據分析版 (有聲)</div>
 </header>
 
 <nav>
@@ -161,12 +160,6 @@
         <button onclick="showTab('quiz-mixed')" class="exam-btn" id="btn-quiz-mixed">🔥 綜合模擬考</button>
     </div>
 </nav>
-
-<div id="loading-msg">正在讀取 data.json ...</div>
-<div id="error-msg">
-    <h3>⚠️ 無法讀取 data.json</h3>
-    <p>請確認 GitHub Repository 中已上傳 data.json 檔案。</p>
-</div>
 
 <div class="container" id="main-content" style="display: none;">
     
@@ -187,6 +180,7 @@
             <div class="flashcard-area">
                 <div class="flashcard" id="card" onclick="flipCard()">
                     <div class="fc-face fc-front">
+                        <div style="position:absolute; top:10px; right:10px; z-index:10;" onclick="event.stopPropagation(); playCurrentCardAudio()">🔊</div>
                         <h2 id="fc-word">Word</h2>
                         <span id="fc-part" style="margin-top:10px; background:#eee; padding:2px 8px; border-radius:10px; font-size:14px;">part</span>
                         <p style="margin-top:20px; color:#999; font-size:14px;">(點擊翻面)</p>
@@ -337,6 +331,25 @@
         renderMultiSelect('c-cat-list');
     }
 
+    // --- 發音功能 (New!) ---
+    function playAudio(text) {
+        if ('speechSynthesis' in window) {
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'en-US'; // 設定美式英語
+            window.speechSynthesis.cancel(); // 停止目前正在播放的聲音
+            window.speechSynthesis.speak(utterance);
+        } else {
+            alert("您的瀏覽器不支援發音功能");
+        }
+    }
+
+    function playCurrentCardAudio() {
+        if (activeList && activeList.length > 0) {
+            const item = activeList[fcIdx];
+            playAudio(item.word || item.phrase);
+        }
+    }
+
     // --- 回報問題功能 ---
     function openReportModal() {
         document.getElementById('report-q-content').innerText = currentQuestionText;
@@ -416,7 +429,6 @@
         if(id==='quiz-grammar') { document.getElementById('g-setup').style.display='block'; document.getElementById('g-game').style.display='none'; }
     }
     function getReportBtn() { 
-        // 回報按鈕改為 div 包裹的 block 按鈕，確保換行
         return `<div style="margin-top:10px; text-align:right;"><button class="report-btn" onclick="openReportModal()">🚩 回報問題</button></div>`; 
     }
 
@@ -472,7 +484,17 @@
             const word = v.word || v.phrase;
             const part = v.part || 'phr.';
             const cls = (cat==='PHRASES') ? 'phrase-item' : '';
-            div.innerHTML += `<div class="vocab-item ${cls}"><div class="v-word">${word} <span class="v-part">${part}</span></div><div class="v-mean">${v.meaning}</div><div class="v-ex">${v.example}</div></div>`;
+            // Added audio button here
+            div.innerHTML += `
+                <div class="vocab-item ${cls}">
+                    <div class="v-word">
+                        ${word} 
+                        <span class="btn-audio" onclick="playAudio('${word.replace(/'/g, "\\'")}')">🔊</span>
+                        <span class="v-part">${part}</span>
+                    </div>
+                    <div class="v-mean">${v.meaning}</div>
+                    <div class="v-ex">${v.example}</div>
+                </div>`;
         });
     }
 
