@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>私中英語特訓班 (英選中版)</title>
+    <title>私中英語特訓班</title>
+    <link href="icon.png" rel="shortcut icon">
     <script src="data.js"></script>
     <style>
         /* --- 基礎設定 --- */
@@ -154,7 +155,7 @@
 <header>
     <div id="user-display"></div>
     <h1>🚀 私中英語特訓班</h1>
-    <div class="subtitle">全方位數據分析版</div>
+    <div class="subtitle">持續更新中...</div>
 </header>
 
 <nav>
@@ -289,7 +290,7 @@
     // ==========================================
     // ⚠️ 請將下方網址換成你的 Apps Script 網址
     // ==========================================
-    const GOOGLE_SCRIPT_URL = 'YOUR_GOOGLE_SCRIPT_URL'; 
+    const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwc96555C6SWdZlcfbLvWt9_ZaxYklV37sTOLoq32QoqatiI7icbi422mp45TF31UEa/exec'; 
 
     let currentUser = "";
     let data = {};
@@ -335,7 +336,7 @@
         document.getElementById('login-screen').style.display = 'none';
         document.getElementById('user-display').innerText = `學員：${currentUser}`;
         
-        // 啟動離開偵測
+        // 啟動離開偵測 (Auto Save)
         window.addEventListener('visibilitychange', handleVisibilityChange);
     }
 
@@ -546,6 +547,7 @@
         div.innerHTML = '';
         let items = (cat==='PHRASES') ? (data.phrases||[]) : data.vocabulary.filter(v=>(v.category||'其他')===cat);
         if(items.length===0) { div.innerHTML='<div style="text-align:center;grid-column:1/-1">無資料</div>'; return; }
+        
         items.forEach(v => {
             const word = v.word || v.phrase;
             const part = v.part || 'phr.';
@@ -649,7 +651,7 @@
         document.getElementById('m-next-btn').style.display='inline-block';
     }
 
-    // --- 填空測驗 ---
+    // --- 填空測驗 (無提示) ---
     function initClozeSession() {
         const themes = getSelectedThemes('c-cat-list');
         activeList = getSelectedItems('c-cat-list');
@@ -679,7 +681,7 @@
         const regex = new RegExp(word, "gi");
         const qSent = sent.replace(regex, "______");
         document.getElementById('c-sentence').innerText = qSent;
-        document.getElementById('c-hint').innerText = `提示：${item.meaning}`;
+        document.getElementById('c-hint').innerText = ''; // Removed hint
         
         let opts = [word];
         const pool = [...data.vocabulary, ...(data.phrases||[])];
@@ -809,7 +811,7 @@
             const qWord = q.item.word || q.item.phrase;
             const correct = q.item.meaning;
             correctStr = correct;
-            currentQuestionText = qWord; // Log English question
+            currentQuestionText = qWord; 
 
             document.getElementById('x-tag-container').innerHTML = '<span class="q-tag tag-memory">單字記憶</span>';
             document.getElementById('x-question').innerHTML = `
@@ -835,7 +837,7 @@
             currentQuestionText = qSent;
             document.getElementById('x-tag-container').innerHTML = '<span class="q-tag tag-cloze">句子填空</span>';
             document.getElementById('x-question').innerHTML = qSent;
-            document.getElementById('x-extra-info').innerText = `提示: ${q.item.meaning}`;
+            document.getElementById('x-extra-info').innerText = ''; // No Hint
             let opts = [word];
             const pool = [...data.vocabulary, ...(data.phrases||[])];
             while(opts.length<4) { let w = (pool[Math.floor(Math.random()*pool.length)]).word||(pool[Math.floor(Math.random()*pool.length)]).phrase; if(!opts.includes(w)) opts.push(w); }
