@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>私中英語特訓班</title>
-    <link href="icon.png" rel="shortcut icon">
+    <title>私中英語特訓班 (英選中版)</title>
+    <script src="data.js"></script>
     <style>
         /* --- 基礎設定 --- */
         body { font-family: 'Segoe UI', 'Microsoft JhengHei', sans-serif; background-color: #f4f7f6; margin: 0; color: #333; }
@@ -86,7 +86,7 @@
         .btn-audio { 
             cursor: pointer; font-size: 18px; padding: 2px 6px; 
             border-radius: 50%; background: #eee; border: 1px solid #ddd; 
-            transition: 0.2s; user-select: none;
+            transition: 0.2s; user-select: none; color: #333;
         }
         .btn-audio:hover { background: #667eea; color: white; border-color: #667eea; }
         .btn-audio:active { transform: scale(0.95); }
@@ -154,7 +154,7 @@
 <header>
     <div id="user-display"></div>
     <h1>🚀 私中英語特訓班</h1>
-    <div class="subtitle">單字與文法加強版（測試中...）</div>
+    <div class="subtitle">全方位數據分析版</div>
 </header>
 
 <nav>
@@ -255,7 +255,7 @@
     <div id="quiz-grammar" class="section">
         <div id="g-setup" class="setup-box">
             <div class="setup-title">文法挑戰</div>
-            <p style="color:#666; margin-bottom:20px;">題庫收錄重點文法，每次測驗將隨機出題。</p>
+            <p style="color:#666; margin-bottom:20px;">題庫收錄約 100 題重點文法，每次測驗將隨機出題。</p>
             <button class="start-btn" onclick="initGrammarSession()">開始文法測驗</button>
         </div>
         <div id="g-game" class="quiz-box" style="display:none;">
@@ -289,7 +289,7 @@
     // ==========================================
     // ⚠️ 請將下方網址換成你的 Apps Script 網址
     // ==========================================
-    const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwc96555C6SWdZlcfbLvWt9_ZaxYklV37sTOLoq32QoqatiI7icbi422mp45TF31UEa/exec'; 
+    const GOOGLE_SCRIPT_URL = 'YOUR_GOOGLE_SCRIPT_URL'; 
 
     let currentUser = "";
     let data = {};
@@ -353,20 +353,17 @@
     // --- 自動存檔邏輯 (核心功能) ---
     function handleVisibilityChange() {
         if (document.visibilityState === 'hidden') {
-            // 使用者切換分頁或關閉瀏覽器 -> 觸發自動存檔
             autoSaveCurrentSession();
         }
     }
 
     function autoSaveCurrentSession() {
-        // 判斷當前正在哪個測驗畫面，並且是否有進度
         const currentSection = document.querySelector('.section.active');
         if(!currentSection) return;
         
         const id = currentSection.id;
         
         if (id === 'flashcard' && document.getElementById('fc-game').style.display !== 'none') {
-            // 翻卡練習中 (記錄已看過的張數)
             if (fcIdx > 0) sendScoreSilent('翻卡練習', 0, fcIdx + 1);
         }
         else if (id === 'quiz-memory' && document.getElementById('m-game').style.display !== 'none') {
@@ -400,7 +397,6 @@
             mistakes: sessionMistakes
         };
 
-        // 使用 keepalive: true 確保在關閉視窗時請求能發送出去
         fetch(GOOGLE_SCRIPT_URL, {
             method: 'POST', 
             mode: 'no-cors', 
@@ -409,7 +405,6 @@
             body: JSON.stringify(payload)
         }).catch(e => console.log("Auto-save failed", e));
         
-        // 顯示小提示 (僅測試時方便看，實際關閉視窗看不到)
         const status = document.getElementById('save-status-display');
         if(status) {
             status.style.display = 'block';
@@ -475,11 +470,8 @@
         sessionMistakes.push(`[題目]: ${question} | [正解]: ${correctAnswer}`);
     }
     
-    // 手動點擊結束按鈕時呼叫
     function endSession(type, score, total, resetId, isSilent) {
-        // 先執行一次自動存檔的邏輯 (其實就是傳送)
         sendScoreSilent(type, score, total);
-        
         if (!isSilent) {
             const duration = Math.round((Date.now() - sessionStartTime) / 1000);
             alert(`紀錄已上傳！\n耗時：${duration}秒`);
@@ -489,9 +481,7 @@
 
     // --- 介面 Helper ---
     function showTab(id) {
-        // 切換 Tab 前，先嘗試自動存檔當前進度
         autoSaveCurrentSession();
-
         document.querySelectorAll('.section').forEach(d => d.classList.remove('active'));
         document.getElementById(id).classList.add('active');
         document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
@@ -556,7 +546,6 @@
         div.innerHTML = '';
         let items = (cat==='PHRASES') ? (data.phrases||[]) : data.vocabulary.filter(v=>(v.category||'其他')===cat);
         if(items.length===0) { div.innerHTML='<div style="text-align:center;grid-column:1/-1">無資料</div>'; return; }
-        
         items.forEach(v => {
             const word = v.word || v.phrase;
             const part = v.part || 'phr.';
@@ -598,7 +587,7 @@
     function nextCard() { fcIdx=(fcIdx+1)%activeList.length; renderFlashcard(); }
     function prevCard() { fcIdx=(fcIdx-1+activeList.length)%activeList.length; renderFlashcard(); }
 
-    // --- 單字測驗 ---
+    // --- 單字測驗 (英 -> 中) ---
     function initMemorySession() {
         const themes = getSelectedThemes('m-cat-list');
         activeList = getSelectedItems('m-cat-list');
@@ -616,19 +605,26 @@
         
         const item = activeList[Math.floor(Math.random()*activeList.length)];
         window.currentMItem = item; 
-        currentQuestionText = `${item.meaning} (測驗: ${item.word||item.phrase})`;
-
-        document.getElementById('m-question').innerHTML = `<span style="font-size:16px;color:#888">請問</span><br>${item.meaning}<br><span style="font-size:16px;color:#888">是哪個字？</span>`;
+        const qWord = item.word || item.phrase;
+        const correct = item.meaning;
         
-        let opts = [item.word || item.phrase];
+        currentQuestionText = `${qWord} (測驗: ${correct})`;
+
+        document.getElementById('m-question').innerHTML = `
+            <span style="font-size:16px;color:#888">請問</span><br>
+            <span style="font-size:32px; font-weight:bold; color:#667eea;">${qWord}</span>
+            <span class="btn-audio" style="font-size:24px;" onclick="playAudio('${qWord.replace(/'/g, "\\'")}')">🔊</span>
+            <br><span style="font-size:16px;color:#888">中文意思是？</span>`;
+        
+        let opts = [correct];
         const pool = [...data.vocabulary, ...(data.phrases||[])];
         while(opts.length<4) {
             let r = pool[Math.floor(Math.random()*pool.length)];
-            let w = r.word || r.phrase;
-            if(!opts.includes(w)) opts.push(w);
+            let m = r.meaning;
+            if(!opts.includes(m)) opts.push(m);
         }
         opts.sort(()=>Math.random()-0.5);
-        mAns = opts.indexOf(item.word || item.phrase);
+        mAns = opts.indexOf(correct);
         
         const div = document.getElementById('m-options');
         div.innerHTML='';
@@ -646,7 +642,8 @@
         } else { 
             btn.classList.add('wrong'); document.querySelectorAll('#m-options .q-opt')[mAns].classList.add('correct'); 
             feedback.innerHTML=`<span style="color:#ef4444; font-weight:bold;">❌ 錯誤</span>${getReportBtn()}`;
-            recordMistake(window.currentMItem.meaning, (window.currentMItem.word||window.currentMItem.phrase));
+            // 紀錄: Q(英文) | A(中文)
+            recordMistake((window.currentMItem.word||window.currentMItem.phrase), window.currentMItem.meaning);
         }
         document.getElementById('m-score').innerText = mScore;
         document.getElementById('m-next-btn').style.display='inline-block';
@@ -732,12 +729,8 @@
         nextGrammarQ();
     }
     function nextGrammarQ() {
-        if(gIdx >= gList.length) { 
-            if(confirm("恭喜完成所有文法題！是否要重新開始？")) { gIdx=0; gList.sort(()=>Math.random()-0.5); } 
-            else { endSession('文法測驗', gScore, gTotal, 'quiz-grammar', false); return; }
-        }
+        if(gIdx >= gList.length) { endSession('文法測驗', gScore, gTotal, 'quiz-grammar', false); return; }
         document.getElementById('g-score').innerText = gScore;
-        document.getElementById('g-total').innerText = gTotal;
         document.getElementById('g-feedback').innerHTML='';
         document.getElementById('g-next-btn').style.display='none';
         
@@ -812,18 +805,28 @@
         
         let correctStr = "";
         if(q.type==='memory') {
-            currentQuestionText = q.item.meaning;
-            const word = q.item.word || q.item.phrase;
-            correctStr = word;
+            // Memory Case: Show English -> Select Chinese
+            const qWord = q.item.word || q.item.phrase;
+            const correct = q.item.meaning;
+            correctStr = correct;
+            currentQuestionText = qWord; // Log English question
+
             document.getElementById('x-tag-container').innerHTML = '<span class="q-tag tag-memory">單字記憶</span>';
-            document.getElementById('x-question').innerHTML = `<span style="font-size:16px;">${q.item.meaning}</span> 是哪個字？`;
-            document.getElementById('x-extra-info').innerText = '';
-            let opts = [word];
+            document.getElementById('x-question').innerHTML = `
+                <span style="font-size:32px; font-weight:bold; color:#667eea;">${qWord}</span>
+                <span class="btn-audio" style="font-size:24px;" onclick="playAudio('${qWord.replace(/'/g, "\\'")}')">🔊</span>`;
+            document.getElementById('x-extra-info').innerText = '請選出中文意思';
+            
+            let opts = [correct];
             const pool = [...data.vocabulary, ...(data.phrases||[])];
-            while(opts.length<4) { let w = (pool[Math.floor(Math.random()*pool.length)]).word||(pool[Math.floor(Math.random()*pool.length)]).phrase; if(!opts.includes(w)) opts.push(w); }
+            while(opts.length<4) { 
+                let m = (pool[Math.floor(Math.random()*pool.length)]).meaning; 
+                if(!opts.includes(m)) opts.push(m); 
+            }
             opts.sort(()=>Math.random()-0.5);
-            xAns = opts.indexOf(word);
+            xAns = opts.indexOf(correct);
             opts.forEach((o, i) => div.innerHTML+=`<div class="q-opt" onclick="checkX(this, ${i}, '${correctStr}')">${o}</div>`);
+
         } else if(q.type==='cloze') {
             const word = q.item.word || q.item.phrase;
             correctStr = word;
@@ -861,7 +864,7 @@
             
             let qTitle = "";
             if(window.currentXItem.type === 'grammar') qTitle = window.currentXItem.q.q;
-            else if(window.currentXItem.type === 'memory') qTitle = window.currentXItem.item.meaning;
+            else if(window.currentXItem.type === 'memory') qTitle = window.currentXItem.item.word || window.currentXItem.item.phrase;
             else qTitle = "句子填空題";
             recordMistake(qTitle, correctStr);
         }
